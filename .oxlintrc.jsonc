@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react", "react-hooks", "jsx-a11y"],
+  "categories": {
+    "correctness": "error",
+  },
+  "rules": {
+    // React 17+ uses the automatic JSX runtime, so React does not need to be in scope.
+    "react/react-in-jsx-scope": "off",
+  },
+  "env": {
+    "builtin": true,
+    "browser": true,
+  },
+  "ignorePatterns": ["dist/**"],
+}

@@ -1,0 +1,38 @@
+amends "package://github.com/jdx/hk/releases/download/v2.12.0/hk@2.12.0#/Config.pkl"
+
+// hk only maps Git events to mise tasks. The check lists live in mise.toml.
+hooks {
+  ["pre-commit"] {
+    fix = true
+    stage = true
+    stash = "git"
+    steps {
+      ["staged"] {
+        check = "mise run check:staged -- {{files}}"
+        fix = "mise run fix:staged -- {{files}}"
+      }
+    }
+  }
+  ["pre-push"] {
+    steps {
+      ["check"] {
+        check = "mise run check:push"
+      }
+    }
+  }
+  ["check"] {
+    steps {
+      ["check"] {
+        check = "mise run check"
+      }
+    }
+  }
+  ["fix"] {
+    fix = true
+    steps {
+      ["fix"] {
+        fix = "mise run fix"
+      }
+    }
+  }
+}

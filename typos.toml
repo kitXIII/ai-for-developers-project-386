@@ -1,0 +1,3 @@
+# `pn` is pnpm's real short binary name, used by the tasks in mise.toml.
+[default.extend-words]
+pn = "pn"

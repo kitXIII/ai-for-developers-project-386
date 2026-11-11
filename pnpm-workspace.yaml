@@ -1,0 +1,3 @@
+allowBuilds:
+  agnix: true
+  esbuild: true
