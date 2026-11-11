@@ -1,4 +1,4 @@
-import { defineConfig } from '@hey-api/openapi-ts'
+import { defineConfig } from '@hey-api/openapi-ts';
 
 export default defineConfig({
   input: './generated/openapi.json',
@@ -10,4 +10,4 @@ export default defineConfig({
     'zod',
     '@tanstack/react-query',
   ],
-})
+});

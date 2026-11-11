@@ -1,9 +1,9 @@
-import { getMessageOptions } from '@app/api/react-query'
-import { Alert, Loader, Text } from '@mantine/core'
-import { useQuery } from '@tanstack/react-query'
+import { getMessageOptions } from '@app/api/react-query';
+import { Alert, Loader, Text } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
 
 export function App() {
-  const { data, error, isPending } = useQuery(getMessageOptions())
+  const { data, error, isPending } = useQuery(getMessageOptions());
 
   return (
     <main>
@@ -15,5 +15,5 @@ export function App() {
       {error === null && isPending && <Loader size="sm" />}
       {error === null && !isPending && data !== undefined && <Text>{data.message}</Text>}
     </main>
-  )
+  );
 }
