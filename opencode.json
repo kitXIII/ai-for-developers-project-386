@@ -1,0 +1,10 @@
+{
+  "mcp": {
+    "servers": {
+      "mantine": {
+        "type": "local",
+        "command": ["npx", "-y", "@mantine/mcp-server@9.8.0"]
+      }
+    }
+  }
+}

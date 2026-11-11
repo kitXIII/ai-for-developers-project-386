@@ -1,4 +1,5 @@
 import { getMessageOptions } from '@app/api/react-query'
+import { Alert, Loader, Text } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 
 export function App() {
@@ -6,9 +7,13 @@ export function App() {
 
   return (
     <main>
-      {error !== null && <p>Ошибка: {error.message}</p>}
-      {error === null && isPending && <p>Загрузка…</p>}
-      {error === null && !isPending && data !== undefined && <p>{data.message}</p>}
+      {error !== null && (
+        <Alert title="Ошибка" color="red">
+          {error.message}
+        </Alert>
+      )}
+      {error === null && isPending && <Loader size="sm" />}
+      {error === null && !isPending && data !== undefined && <Text>{data.message}</Text>}
     </main>
   )
 }
