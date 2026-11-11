@@ -81,7 +81,7 @@ pnpm gen   # = tsp compile + openapi-ts, во всех workspace-пакетах
 
 Как использовать сгенерированное:
 
-- **клиент** импортирует SDK-функции и Zod-схемы: `import { getMessage } from '@app/api'`, `import { zMessage } from '@app/api/zod'`;
+- **клиент** обращается к API только через React Query: компоненты вызывают `useQuery(getMessageOptions())` из `@app/api/react-query` — плагин генерирует типизированные query options и query keys для каждой операции (`@tanstack/react-query` подключён и провайдер настроен в `client/main.tsx`). Zod-схемы для валидации форм доступны через `@app/api/zod`;
 - **сервер** импортирует только типы: `import type { Message } from '@app/api/types'` — тип-импорт стирается при компиляции, поэтому рантайм-зависимости сервера от пакета нет.
 
 Расхождение сервера с контрактом ловится двумя механизмами: `tsc` проверяет типы хендлеров против сгенерированных типов, а контрактный тест (`test/api/contract.test.ts`) валидирует ответы живого сервера по JSON Schema из `openapi.json`. CI дополнительно перегенерирует контракт (`mise run gen:check`) и падает, если закоммиченные артефакты устарели.

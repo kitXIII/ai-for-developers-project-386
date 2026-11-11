@@ -16,16 +16,16 @@ export async function buildApp({
 }: BuildAppOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({ logger })
 
-  // Running from `server/` during development and from `dist/` in production,
-  // so `..` points to the project root in both cases.
-  const root = resolve(import.meta.dirname, '..')
-
   if (serveClient) {
     await app.register(FastifyVite, {
-      root,
+      // Running from `server/` during development and from `dist/` in production,
+      // so `..` points to the project root in both cases.
+      root: resolve(import.meta.dirname, '..'),
       dev: process.argv.includes('--dev'),
       spa: true,
     })
+
+    app.get('/', (_request, reply) => reply.html())
   }
 
   // The handler return type comes from the TypeSpec contract, so a contract
@@ -33,10 +33,6 @@ export async function buildApp({
   app.get('/api/message', async (): Promise<Message> => {
     return { message: 'Hello from Fastify!' }
   })
-
-  if (serveClient) {
-    app.get('/', (_request, reply) => reply.html())
-  }
 
   // SPA fallback: any non-API GET request renders the client app,
   // so client-side routes work on a hard refresh or direct link.

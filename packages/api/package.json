@@ -10,9 +10,11 @@
     ".": "./generated/client/index.ts",
     "./client": "./generated/client/client.gen.ts",
     "./types": "./generated/client/types.gen.ts",
-    "./zod": "./generated/client/zod.gen.ts"
+    "./zod": "./generated/client/zod.gen.ts",
+    "./react-query": "./generated/client/@tanstack/react-query.gen.ts"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
