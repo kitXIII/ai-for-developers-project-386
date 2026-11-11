@@ -1,0 +1,26 @@
+{
+  "name": "@app/api",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "gen": "tsp compile spec && openapi-ts"
+  },
+  "exports": {
+    ".": "./generated/client/index.ts",
+    "./client": "./generated/client/client.gen.ts",
+    "./types": "./generated/client/types.gen.ts",
+    "./zod": "./generated/client/zod.gen.ts"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@hey-api/openapi-ts": "^0.99.0",
+    "@typespec/compiler": "^1.18.0",
+    "@typespec/http": "^1.18.0",
+    "@typespec/openapi": "^1.18.0",
+    "@typespec/openapi3": "^1.18.0",
+    "typescript": "6.0.3"
+  }
+}

@@ -38,6 +38,7 @@ depends = [
   "lint",
   "typecheck",
   "test",
+  "gen:check",
   "knip",
   "jactionlint",
   "typos",
@@ -90,6 +91,15 @@ depends = ["secrets:history"]
 # API tests. Part of `check:push`, so CI and pre-push run them too.
 [tasks.test]
 run = "pnpm test"
+
+# Regenerate the API contract and fail if the committed artifacts are stale.
+[tasks."gen:check"]
+run = '''
+#!/usr/bin/env bash
+set -e
+pnpm gen
+git diff --exit-code -- packages/api/generated
+'''
 
 [tasks.format]
 run = "oxfmt --check ."

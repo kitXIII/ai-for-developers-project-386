@@ -10,6 +10,16 @@ updates:
       npm:
         patterns:
           - '*'
+  - package-ecosystem: npm
+    directory: /packages/api
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      npm:
+        patterns:
+          - '*'
   - package-ecosystem: github-actions
     directory: /
     schedule:

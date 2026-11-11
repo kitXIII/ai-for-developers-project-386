@@ -1,3 +1,7 @@
 # `pn` is pnpm's real short binary name, used by the tasks in mise.toml.
 [default.extend-words]
 pn = "pn"
+
+# Generated API artifacts: TypeSpec → OpenAPI output and the hey-api SDK.
+[files]
+extend-exclude = ["packages/api/generated"]

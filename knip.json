@@ -1,4 +1,12 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "project": ["client/**/*.{ts,tsx}", "server/**/*.ts", "test/**/*.ts", "*.ts"]
+  "workspaces": {
+    ".": {
+      "project": ["client/**/*.{ts,tsx}", "server/**/*.ts", "test/**/*.ts", "*.ts"]
+    },
+    "packages/api": {
+      "ignore": ["generated/**"],
+      "ignoreDependencies": ["@typespec/http", "@typespec/openapi", "@typespec/openapi3"]
+    }
+  }
 }

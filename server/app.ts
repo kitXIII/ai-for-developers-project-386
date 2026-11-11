@@ -1,3 +1,4 @@
+import type { Message } from '@app/api/types'
 import { resolve } from 'node:path'
 import Fastify, { type FastifyInstance } from 'fastify'
 import FastifyVite from '@fastify/vite'
@@ -27,7 +28,9 @@ export async function buildApp({
     })
   }
 
-  app.get('/api/message', async () => {
+  // The handler return type comes from the TypeSpec contract, so a contract
+  // change that breaks the server fails the typecheck.
+  app.get('/api/message', async (): Promise<Message> => {
     return { message: 'Hello from Fastify!' }
   })
 

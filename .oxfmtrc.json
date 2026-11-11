@@ -8,6 +8,7 @@
     ".github/workflows/hexlet-check.yml",
     "dist/**",
     "node_modules/**",
+    "packages/api/generated/**",
     "pnpm-lock.yaml"
   ]
 }

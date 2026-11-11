@@ -12,6 +12,7 @@
 - **Node.js 26** — среда выполнения
 - **TypeScript 7** — строгая типизация
 - **Fastify 5** — HTTP-сервер и API
+- **TypeSpec** — описание API-контракта, из него генерируются OpenAPI и SDK
 - **React 19** — клиентское приложение
 - **Vite 8** — сборка клиента и dev-сервер
 - **@fastify/vite** — интеграция Vite с Fastify
@@ -64,6 +65,27 @@ mise run build   # соберёт клиент и сервер в dist/
 mise run start   # запустит собранный сервер с NODE_ENV=production
 ```
 
+## API-контракт
+
+Контракт API описывается в [TypeSpec](https://typespec.io/) и живёт в workspace-пакете `packages/api` (`@app/api`):
+
+- `packages/api/spec/*.tsp` — источник правды: модели и операции API;
+- `packages/api/generated/openapi.json` — OpenAPI 3.1, сгенерированный из TypeSpec;
+- `packages/api/generated/client/` — типизированный SDK, типы и Zod-схемы ([hey-api](https://heyapi.dev/)), сгенерированные из OpenAPI.
+
+Сгенерированные артефакты коммитятся. После изменения контракта:
+
+```bash
+pnpm gen   # = tsp compile + openapi-ts, во всех workspace-пакетах
+```
+
+Как использовать сгенерированное:
+
+- **клиент** импортирует SDK-функции и Zod-схемы: `import { getMessage } from '@app/api'`, `import { zMessage } from '@app/api/zod'`;
+- **сервер** импортирует только типы: `import type { Message } from '@app/api/types'` — тип-импорт стирается при компиляции, поэтому рантайм-зависимости сервера от пакета нет.
+
+Расхождение сервера с контрактом ловится двумя механизмами: `tsc` проверяет типы хендлеров против сгенерированных типов, а контрактный тест (`test/api/contract.test.ts`) валидирует ответы живого сервера по JSON Schema из `openapi.json`. CI дополнительно перегенерирует контракт (`mise run gen:check`) и падает, если закоммиченные артефакты устарели.
+
 ## Проверки качества
 
 Все проверки запускаются одной командой:
@@ -86,7 +108,7 @@ Pre-commit проверяет staged-файлы, pre-push — весь прое�
 - **oxlint** — линтер TS/TSX: ошибки и подозрительные конструкции, например `debugger` или неиспользуемые переменные.
 - **oxfmt** — форматтер кода, конфигов и Markdown: проверяет единый стиль, `mise run fix` переформатирует файлы.
 - **tsc** — компилятор TypeScript в режиме `strict` с `noEmit`: проверяет типы, неиспользуемые локальные переменные и параметры.
-- **Vitest** — тесты API: запускает файлы `*.test.ts` из каталога `test/`.
+- **Vitest** — тесты API: запускает файлы `*.test.ts` из каталога `test/`, включая контрактный тест, сверяющий сервер с `packages/api/generated/openapi.json`.
 - **knip** — находит мёртвый код: неиспользуемые файлы, экспорты и зависимости.
 - **jactionlint** — линтер GitHub Actions и Dependabot: unpinned actions, отсутствие `permissions`, `concurrency` и `timeout-minutes`.
 - **typos** — ищет опечатки в коде, конфигах и документации.
