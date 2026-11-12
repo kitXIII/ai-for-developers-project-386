@@ -31,6 +31,8 @@ Commitlint проверяет каждый коммит: заголовок — 
   `buildApp({ serveClient: false, logger: false })` (см. `test/api/contract.test.ts`).
 - `mise run check` включает `agent-config` (`agnix --strict .`) — валидирует этот файл: не ломайте
   структуру и ссылки в `AGENTS.md`/README.
+- Фиксеры (`oxfmt`, `oxlint`, `typos`) в pre-commit могут оставить правки в рабочем дереве, если
+  хук упал после них: после неудачного коммита проверяйте `git status` перед повторной попыткой.
 
 ## Структура
 
