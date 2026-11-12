@@ -15,6 +15,11 @@
 - Клиент ходит в API только через React Query: `useQuery(getMessageOptions())` из `@app/api/react-query`;
   Zod-схемы форм — `@app/api/zod`.
 
+## Коммиты
+
+Сообщения коммитов следуют Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `ci:`).
+Commitlint проверяет каждый коммит: заголовок — до 120 символов, каждая строка тела — до 100.
+
 ## Проверки и их особенности
 
 - oxlint запускается с `--deny-warnings`: любое предупреждение = ошибка.

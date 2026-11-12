@@ -20,6 +20,13 @@ hooks {
       }
     }
   }
+  ["commit-msg"] {
+    steps {
+      ["commitlint"] {
+        check = "commitlint --edit {{commit_msg_file}}"
+      }
+    }
+  }
   ["check"] {
     steps {
       ["check"] {

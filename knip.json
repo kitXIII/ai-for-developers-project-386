@@ -2,7 +2,8 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "project": ["client/**/*.{ts,tsx}", "server/**/*.ts", "test/**/*.ts", "*.ts"]
+      "project": ["client/**/*.{ts,tsx}", "server/**/*.ts", "test/**/*.ts", "*.ts"],
+      "ignoreDependencies": ["@commitlint/cli"]
     },
     "packages/api": {
       "ignore": ["generated/**"],
