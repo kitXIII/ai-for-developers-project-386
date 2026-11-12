@@ -20,6 +20,8 @@ updates:
       npm:
         patterns:
           - '*'
+    ignore:
+      - dependency-name: typescript
   - package-ecosystem: github-actions
     directory: /
     schedule:
