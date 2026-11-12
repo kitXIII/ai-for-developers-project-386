@@ -3,5 +3,6 @@
 pn = "pn"
 
 # Generated API artifacts: TypeSpec → OpenAPI output and the hey-api SDK.
+# Vendored agent skills: third-party files, not subject to repo spelling rules.
 [files]
-extend-exclude = ["packages/api/generated"]
+extend-exclude = [".agents", "packages/api/generated"]

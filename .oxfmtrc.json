@@ -5,6 +5,7 @@
   "printWidth": 100,
   "sortPackageJson": false,
   "ignorePatterns": [
+    ".agents/**",
     ".github/workflows/hexlet-check.yml",
     "dist/**",
     "node_modules/**",

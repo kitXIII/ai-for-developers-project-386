@@ -42,3 +42,19 @@ Commitlint проверяет каждый коммит: заголовок — 
 
 - `dist/`, `node_modules/`, `packages/api/generated/` — не рецензировать и не исправлять.
 - `.github/workflows/hexlet-check.yml` — не трогать.
+
+## Agent skills
+
+### Issue tracker
+
+Задачи и спеки живут в GitHub Issues этого репо, все операции через `gh` CLI.
+See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Дефолтный набор из пяти лейблов: `needs-triage`, `needs-info`, `ready-for-agent`,
+`ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` в корне + `docs/adr/`. See `docs/agents/domain.md`.

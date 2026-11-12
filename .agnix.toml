@@ -1,0 +1,3 @@
+# Vendored agent skills under .agents/skills are third-party files; agnix
+# validates our own configs (AGENTS.md, docs/agents/, workflows), not them.
+exclude = [".agents/**"]
