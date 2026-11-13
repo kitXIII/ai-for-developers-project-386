@@ -10,6 +10,7 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 
 - `mise run` — dev-сервер (Fastify + Vite через @fastify/vite, порт 3000)
 - `mise run check` — полный CI-гейт: format → lint → typecheck → test → gen:check → knip → jactionlint → typos → secrets → agent-config + osv-scanner (нужна сеть)
+- `mise run check:staged -- <файлы>` / `mise run fix:staged -- <файлы>` — быстрая проверка/автоисправления конкретных файлов; полный `check` гоняйте один раз в конце работы
 - `mise run fix` — безопасные автоисправления
 - `mise run test` / `pnpm test:watch` — Vitest
 
@@ -19,7 +20,9 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 - Сервер импортирует из `@app/api` **только типы** (`import type { Message } from '@app/api/types'`),
   чтобы не тянуть рантайм-зависимость.
 - Клиент ходит в API только через React Query: `useQuery(getMessageOptions())` из `@app/api/react-query`;
-  Zod-схемы форм — `@app/api/zod`.
+  Zod-схемы форм — `@app/api/zod`. Правило «только типы» проверяется линтером (`no-restricted-imports` для `server/**`).
+- В `packages/api` TypeScript закреплён на 6-й версии (`typescript: "6.0.3"`) — генератор hey-api (openapi-ts)
+  ещё не поддерживает TS 7 native. Поэтому в dependabot для этого пакета `typescript` в `ignore`.
 
 ## Коммиты
 
@@ -50,6 +53,7 @@ Commitlint проверяет каждый коммит: заголовок — 
 
 - `dist/`, `node_modules/`, `packages/api/generated/` — не рецензировать и не исправлять.
 - `.github/workflows/hexlet-check.yml` — не трогать.
+- `.agents/skills/` — вендорские сторонние скиллы: исключены из oxfmt, typos и agnix; не редактировать и не форматировать.
 
 ## Agent skills
 

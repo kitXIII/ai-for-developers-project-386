@@ -20,6 +20,8 @@ updates:
       npm:
         patterns:
           - '*'
+    # TypeScript 6 is pinned on purpose: hey-api (openapi-ts) does not support TS 7 native yet.
+    # See AGENTS.md, «API-контракт». Do not remove this ignore when bumping TypeScript.
     ignore:
       - dependency-name: typescript
   - package-ecosystem: github-actions

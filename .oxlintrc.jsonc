@@ -8,6 +8,27 @@
     // React 17+ uses the automatic JSX runtime, so React does not need to be in scope.
     "react/react-in-jsx-scope": "off",
   },
+  // The server imports from @app/api types only (AGENTS.md, «API-контракт»): a value import
+  // would create a runtime dependency on the contract package.
+  "overrides": [
+    {
+      "files": ["server/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "regex": "^@app/api(/.*)?$",
+                "allowTypeImports": true,
+                "message": "Server imports from '@app/api' must be type-only (`import type { ... }`).",
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
   "env": {
     "builtin": true,
     "browser": true,
