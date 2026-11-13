@@ -1,0 +1,36 @@
+# VCS, CI, editors, agent tooling
+.git
+.gitignore
+.github
+.idea
+.agents
+.rumdl_cache
+opencode.json
+skills-lock.json
+
+# Local artifacts and caches — the image installs and builds from scratch
+node_modules
+dist
+coverage
+build
+database
+.env
+.DS_Store
+
+# Tests and docs — not needed inside the image
+test
+docs
+*.md
+
+# Repo tooling configs the image does not use
+mise.toml
+hk.pkl
+hk.local.pkl
+commitlint.config.mjs
+knip.json
+vitest.config.ts
+tsconfig.test.json
+.agnix.toml
+.oxfmtrc.json
+.oxlintrc.jsonc
+typos.toml

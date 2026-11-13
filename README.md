@@ -90,6 +90,17 @@ mise run build   # соберёт клиент и сервер в dist/
 mise run start   # запустит собранный сервер с NODE_ENV=production
 ```
 
+## Docker
+
+Прод-образ собирается multi-stage `Dockerfile` на базе `node:26-alpine`.
+
+```bash
+mise run docker:build   # соберёт образ calls-calendar
+mise run docker:run     # запустит контейнер; хост-порт переопределяется: PORT=8080 mise run docker:run
+```
+
+Данные хранятся в памяти процесса, так что перезапуск контейнера сбрасывает записи.
+
 ## API-контракт
 
 Контракт API описывается в [TypeSpec](https://typespec.io/) и живёт в workspace-пакете `packages/api` (`@app/api`):

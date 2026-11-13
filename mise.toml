@@ -143,3 +143,11 @@ run = "knip --no-progress"
 
 [tasks.jactionlint]
 run = "jactionlint --no-color"
+
+# Build the production Docker image (see Dockerfile).
+[tasks."docker:build"]
+run = "docker build -t calls-calendar ."
+
+# Run the built image. PORT is the host port, the container listens on 3000.
+[tasks."docker:run"]
+run = "docker run --rm -p \"${PORT:-3000}:3000\" calls-calendar"
