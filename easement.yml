@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/mokevnin/easement/main/easement.schema.json
+version: 1
+
+components:
+  api:
+    in: packages/api
+    because: 'the API contract — TypeSpec spec and the generated SDK, the only thing both apps share'
+  client:
+    in: client
+    because: 'the React SPA — renders UI, reaches the backend only through @app/api'
+  server:
+    in: server
+    because: 'the Fastify app — serves the API and the SPA'
+
+# The generated SDK is a target of imports, never checked as a source.
+target_only:
+  - packages/api/generated/**
+
+uncovered_ok:
+  - name: [test/**, vitest.config.ts]
+    because: 'checked by tsconfig.test.json, a separate Vitest program that easement does not index'
+  - name: [packages/api/**]
+    because: 'hey-api generated SDK and its generator config, never hand-edited'
+  - name: [commitlint.config.mjs, postcss.config.cjs]
+    because: 'plain JS root configs outside the indexed tsconfig'
+
+tests: auto
+no_cycles: true
+manifests: true
+
+layers:
+  # The two apps are siblings: they never import each other.
+  - [client, server]
+  # The contract sits below both.
+  - api
+
+rules:
+  client:
+    may_depend_on: [api]
+    because: 'the SPA talks to the API only through the generated SDK'
+  server:
+    may_depend_on: [api]
+    because: 'the server imports only contract types from @app/api'
+  tests:
+    may_depend_on: [server, api]
+    because: 'tests build the real app and inject requests'
