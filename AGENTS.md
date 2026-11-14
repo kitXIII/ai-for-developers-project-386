@@ -13,6 +13,8 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 - `mise run check:staged -- <файлы>` / `mise run fix:staged -- <файлы>` — быстрая проверка/автоисправления конкретных файлов; полный `check` гоняйте один раз в конце работы
 - `mise run fix` — безопасные автоисправления
 - `mise run test` / `pnpm test:watch` — Vitest
+- `mise run test:e2e` — Playwright e2e (`test/e2e/*.spec.ts`, проекты mobile 360×800 и desktop 1280×720;
+  входит в `check`, требует одноразового `pnpm exec playwright install chromium`)
 
 ## API-контракт (главный источник правды)
 
