@@ -10,3 +10,5 @@ dist/
 database
 coverage
 hk.local.pkl
+test-results
+playwright-report

@@ -41,6 +41,7 @@ depends = [
   "lint",
   "typecheck",
   "test",
+  "test:e2e",
   "gen:check",
   "knip",
   "easement",
@@ -95,6 +96,11 @@ depends = ["secrets:history"]
 # API tests. Part of `check:push`, so CI and pre-push run them too.
 [tasks.test]
 run = "pnpm test"
+
+# E2E tests (Playwright, mobile 360px + desktop). Part of `check:push`;
+# requires browsers once: `pnpm exec playwright install chromium`.
+[tasks."test:e2e"]
+run = "playwright test --config test/e2e/playwright.config.ts"
 
 # Regenerate the API contract and fail if the committed artifacts are stale.
 [tasks."gen:check"]
