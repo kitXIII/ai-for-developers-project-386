@@ -43,6 +43,7 @@ depends = [
   "test",
   "gen:check",
   "knip",
+  "easement",
   "jactionlint",
   "typos",
   "secrets",
@@ -142,6 +143,10 @@ run = "pnpm typecheck"
 
 [tasks.knip]
 run = "knip --no-progress"
+
+# Architecture gate: imports must follow easement.yml (see AGENTS.md).
+[tasks.easement]
+run = "easement check"
 
 [tasks.jactionlint]
 run = "jactionlint --no-color"

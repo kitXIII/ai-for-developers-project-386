@@ -29,6 +29,26 @@ jobs:
       - run: mise run setup
       - run: mise run check
 
+  architecture:
+    name: Architecture gate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
+      - run: mise run setup
+      # Judges only what the pull request adds; the full gate runs in `check`
+      # above and on pre-push.
+      - uses: mokevnin/easement@1eeaecd8451ed08e0f1203542788a77c8d98c71a
+        with:
+          diff: origin/main
+
   security:
     name: History secret scan
     if: github.event_name == 'schedule'
