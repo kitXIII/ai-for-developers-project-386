@@ -11,7 +11,7 @@ export function HomePage() {
         календаре.
       </Text>
       <Group gap="sm">
-        <Button component={Link} to="/booking" color="teal">
+        <Button component={Link} to="/booking">
           Записаться
         </Button>
       </Group>
