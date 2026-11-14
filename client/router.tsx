@@ -3,6 +3,7 @@ import { App } from './App';
 import { AdminPage } from './pages/AdminPage';
 import { BookingPage } from './pages/BookingPage';
 import { HomePage } from './pages/HomePage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 export const router = createBrowserRouter([
   {
@@ -12,6 +13,7 @@ export const router = createBrowserRouter([
       { index: true, Component: HomePage },
       { path: 'booking', Component: BookingPage },
       { path: 'admin', Component: AdminPage },
+      { path: '*', Component: NotFoundPage },
     ],
   },
 ]);
