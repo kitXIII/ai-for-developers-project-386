@@ -9,7 +9,7 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 ## Команды
 
 - `mise run` — dev-сервер (Fastify + Vite через @fastify/vite, порт 3000)
-- `mise run check` — полный CI-гейт: format → lint → typecheck → test → gen:check → knip → jactionlint → typos → secrets → agent-config + osv-scanner (нужна сеть)
+- `mise run check` — полный CI-гейт: format → lint → typecheck → test → gen:check → knip → easement → jactionlint → typos → secrets → agent-config + osv-scanner (нужна сеть)
 - `mise run check:staged -- <файлы>` / `mise run fix:staged -- <файлы>` — быстрая проверка/автоисправления конкретных файлов; полный `check` гоняйте один раз в конце работы
 - `mise run fix` — безопасные автоисправления
 - `mise run test` / `pnpm test:watch` — Vitest
@@ -42,6 +42,19 @@ Commitlint проверяет каждый коммит: заголовок — 
   структуру и ссылки в `AGENTS.md`/README.
 - Фиксеры (`oxfmt`, `oxlint`, `typos`) в pre-commit могут оставить правки в рабочем дереве, если
   хук упал после них: после неудачного коммита проверяйте `git status` перед повторной попыткой.
+
+## Архитектурный гейт (easement)
+
+`easement` проверяет импорты против `easement.yml`: компоненты `client`, `server`, `api` (`packages/api`),
+слои делают приложения сиблингами над контрактом (`client → server` запрещён), `manifests` требует
+объявлять внешние пакеты в `package.json`, сгенерированный SDK — `target_only`. Правила для агентов:
+
+- Пользуйтесь скиллом `easement` перед добавлением файла или импорта и всегда, когда `easement check`
+  падает: `easement explain <path>` до кода, нарушение чините по его `because`, а не правкой конфига.
+- После изменения кода запускайте `easement check` — он должен завершаться с кодом 0
+  (на pre-push и в CI он запускается сам).
+- Никогда не редактируйте `easement.yml`, не перегенерируйте бейслайн (`easement baseline`) и не
+  добавляйте комментарии `easement:disable` без согласования с человеком.
 
 ## Структура
 
