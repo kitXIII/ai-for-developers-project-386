@@ -43,6 +43,12 @@
       "skillPath": "skills/engineering/domain-modeling/SKILL.md",
       "computedHash": "b78689833404148c769077355e12dbe5ad996a158a1e21e58ddf169e439d9d8c"
     },
+    "easement": {
+      "source": "mokevnin/easement",
+      "sourceType": "github",
+      "skillPath": "skills/easement/SKILL.md",
+      "computedHash": "bbd2b09b432d07e22ce2bac5471b23926b97891d6a6664a4bc142d1ef519875b"
+    },
     "git-guardrails-claude-code": {
       "source": "mattpocock/skills",
       "sourceType": "github",
