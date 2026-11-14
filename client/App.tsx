@@ -1,21 +1,42 @@
-import { Anchor, Container } from '@mantine/core';
-import { Link, Outlet } from 'react-router';
+import { AppShell, Button, Container, Group } from '@mantine/core';
+import { Link, Outlet, useLocation } from 'react-router';
 
 export function App() {
+  const { pathname } = useLocation();
+
   return (
-    <>
-      <header>
-        <Container>
-          <Anchor component={Link} to="/" fz="xl" fw={700} underline="never">
-            Календарь звонков
-          </Anchor>
+    <AppShell header={{ height: 60 }} padding="md">
+      <AppShell.Header>
+        <Container h="100%">
+          <Group justify="space-between" h="100%">
+            <Button
+              component={Link}
+              to="/"
+              variant="transparent"
+              color="teal"
+              fz="xl"
+              fw={700}
+              pl={0}
+            >
+              Календарь звонков
+            </Button>
+            {pathname === '/' ? (
+              <Button component={Link} to="/admin" variant="default">
+                Администрирование
+              </Button>
+            ) : (
+              <Button component={Link} to="/" variant="default">
+                На главную
+              </Button>
+            )}
+          </Group>
         </Container>
-      </header>
-      <main>
+      </AppShell.Header>
+      <AppShell.Main>
         <Container>
           <Outlet />
         </Container>
-      </main>
-    </>
+      </AppShell.Main>
+    </AppShell>
   );
 }
