@@ -145,7 +145,7 @@ Pre-commit проверяет staged-файлы, pre-push — весь прое�
 - **oxfmt** — форматтер кода, конфигов и Markdown: проверяет единый стиль, `mise run fix` переформатирует файлы.
 - **tsc** — компилятор TypeScript в режиме `strict` с `noEmit`: проверяет типы, неиспользуемые локальные переменные и параметры.
 - **Vitest** — тесты API: запускает файлы `*.test.ts` из каталога `test/`, включая контрактный тест, сверяющий сервер с `packages/api/generated/openapi.json`.
-- **Playwright** — e2e-тесты (`test/e2e/`, файлы `*.spec.ts`): поднимают dev-сервер и проверяют контент и переходы в двух проектах — mobile 360×800 и desktop 1280×720 (только chromium). Требуют одноразовой установки браузера: `pnpm exec playwright install chromium`.
+- **Playwright** — e2e-тесты (`test/e2e/`, файлы `*.spec.ts`): поднимают dev-сервер и проверяют контент и переходы в двух проектах — mobile 360×800 и desktop 1280×720 (только chromium). Локально браузер ставится один раз: `pnpm exec playwright install chromium`. В CI job `check` ставит его сам на каждом прогоне: `pnpm exec playwright install --with-deps chromium`.
 - **knip** — находит мёртвый код: неиспользуемые файлы, экспорты и зависимости.
 - **jactionlint** — линтер GitHub Actions и Dependabot: unpinned actions, отсутствие `permissions`, `concurrency` и `timeout-minutes`.
 - **typos** — ищет опечатки в коде, конфигах и документации.
@@ -175,7 +175,7 @@ pnpm test:watch    # режим наблюдения
 
 Тесты лежат в каталоге `test/` в файлах `*.test.ts` и входят в `mise run check`. Там же позже появятся тесты клиента (`test/client/`).
 
-E2E-тесты написаны на [Playwright](https://playwright.dev/) и лежат в `test/e2e/` (`*.spec.ts`): проверяют наличие контента и переходы по страницам в мобильном (360×800) и десктопном (1280×720) проектах. Перед первым запуском установите браузер: `pnpm exec playwright install chromium`.
+E2E-тесты написаны на [Playwright](https://playwright.dev/) и лежат в `test/e2e/` (`*.spec.ts`): проверяют наличие контента и переходы по страницам в мобильном (360×800) и десктопном (1280×720) проектах. Перед первым локальным запуском установите браузер: `pnpm exec playwright install chromium`. В CI это делает job `check` на каждом прогоне (`pnpm exec playwright install --with-deps chromium`).
 
 ```bash
 mise run test:e2e  # однократный прогон, поднимает dev-сервер сам

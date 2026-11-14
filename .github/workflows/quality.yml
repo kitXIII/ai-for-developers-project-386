@@ -27,6 +27,9 @@ jobs:
           persist-credentials: false
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
       - run: mise run setup
+      # Chromium is not on the runner. Install every run: a browser cache is not
+      # worth it, and a Playwright image would wrap this whole job.
+      - run: pnpm exec playwright install --with-deps chromium
       - run: mise run check
 
   architecture:

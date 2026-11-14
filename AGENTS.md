@@ -14,7 +14,8 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 - `mise run fix` — безопасные автоисправления
 - `mise run test` / `pnpm test:watch` — Vitest
 - `mise run test:e2e` — Playwright e2e (`test/e2e/*.spec.ts`, проекты mobile 360×800 и desktop 1280×720;
-  входит в `check`, требует одноразового `pnpm exec playwright install chromium`)
+  входит в `check`). Локально браузер ставится один раз: `pnpm exec playwright install chromium`.
+  В CI job `check` ставит его сам на каждом прогоне: `pnpm exec playwright install --with-deps chromium`
 
 ## API-контракт (главный источник правды)
 
