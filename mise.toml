@@ -1,6 +1,8 @@
 [tools]
 node = "26"
 pnpm = "12.18.0"
+"github:mokevnin/easement" = "latest"
+"npm:@sourcegraph/scip-typescript" = "latest"
 hk = "2.12.0"
 jactionlint = "2.5.0"
 shellcheck = "0.11.0"
