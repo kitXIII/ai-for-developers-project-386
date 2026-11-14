@@ -92,4 +92,10 @@ describe('API contract', () => {
       }
     },
   );
+
+  // `it.each` registers no tests while the contract has no GET operations,
+  // and Vitest fails a file without any, so keep an explicit placeholder.
+  it.skipIf(getOperations.length > 0)('OpenAPI document declares no GET operations yet', () => {
+    expect(getOperations).toEqual([]);
+  });
 });

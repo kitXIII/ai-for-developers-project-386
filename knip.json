@@ -3,11 +3,17 @@
   "workspaces": {
     ".": {
       "project": ["client/**/*.{ts,tsx}", "server/**/*.ts", "test/**/*.ts", "*.ts"],
-      "ignoreDependencies": ["@commitlint/cli"]
+      "ignoreDependencies": ["@commitlint/cli", "@app/api"]
     },
     "packages/api": {
       "ignore": ["generated/**"],
-      "ignoreDependencies": ["@typespec/http", "@typespec/openapi", "@typespec/openapi3"]
+      "ignoreDependencies": [
+        "@typespec/http",
+        "@typespec/openapi",
+        "@typespec/openapi3",
+        "@tanstack/react-query",
+        "zod"
+      ]
     }
   }
 }

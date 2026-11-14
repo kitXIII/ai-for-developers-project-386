@@ -1,4 +1,3 @@
-import type { Message } from '@app/api/types';
 import { resolve } from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import FastifyVite from '@fastify/vite';
@@ -27,12 +26,6 @@ export async function buildApp({
 
     app.get('/', (_request, reply) => reply.html());
   }
-
-  // The handler return type comes from the TypeSpec contract, so a contract
-  // change that breaks the server fails the typecheck.
-  app.get('/api/message', async (): Promise<Message> => {
-    return { message: 'Hello from Fastify!' };
-  });
 
   // SPA fallback: any non-API GET request renders the client app,
   // so client-side routes work on a hard refresh or direct link.

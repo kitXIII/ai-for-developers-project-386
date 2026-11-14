@@ -3,29 +3,3 @@
 export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
-
-/**
- * Greeting returned by the service.
- */
-export type Message = {
-    /**
-     * Human-readable greeting text.
-     */
-    message: string;
-};
-
-export type GetMessageData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/message';
-};
-
-export type GetMessageResponses = {
-    /**
-     * The request has succeeded.
-     */
-    200: Message;
-};
-
-export type GetMessageResponse = GetMessageResponses[keyof GetMessageResponses];
