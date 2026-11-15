@@ -31,16 +31,26 @@ const openapi = JSON.parse(
 
 type OperationCase = {
   method: 'GET' | 'POST';
-  // Concrete request URL; differs from the document template when it carries an id.
+  // Concrete request URL when the case can state it statically; a `{id}`
+  // template here means `prepare` builds the concrete URL (the template is
+  // also the document key and the test title).
   path: string;
   // Key in openapi.paths; defaults to `path`.
   pathTemplate?: string;
   // Expected status; the body must match the schema documented for exactly this status.
   status: number;
   payload?: Record<string, unknown>;
-  // Seeds state through the API and builds the payload lazily when the case
+  // Seeds state through the API and builds the request lazily when the case
   // needs real ids or a genuinely free slot (docs/test-plan.md).
-  prepare?: (app: FastifyInstance) => Promise<Record<string, unknown>>;
+  prepare?: (app: FastifyInstance) => Promise<PreparedRequest>;
+};
+
+// The request a sweep case sends: `prepare` overrides the case's static URL
+// and/or supplies the payload.
+type PreparedRequest = {
+  // Concrete URL; defaults to the case's `path`.
+  path?: string;
+  payload?: Record<string, unknown>;
 };
 
 const adminMeetingTypesPath = '/api/v1/admin/meeting-types';
@@ -55,8 +65,8 @@ const validMeetingType = {
 const unknownMeetingTypeId = '00000000-0000-0000-0000-000000000000';
 const validGuestName = 'Мария Петрова';
 
-// The table grows ticket by ticket: #11–#14 cover the meeting-type and booking
-// operations, #15 — the owner's bookings list.
+// The general sweep (docs/test-plan.md): one case per documented response of
+// every operation — the guard below keeps it total when the contract changes.
 const operations: OperationCase[] = [
   { method: 'POST', path: adminMeetingTypesPath, status: 201, payload: validMeetingType },
   {
@@ -68,22 +78,49 @@ const operations: OperationCase[] = [
   { method: 'GET', path: adminMeetingTypesPath, status: 200 },
   {
     method: 'GET',
-    path: `${adminMeetingTypesPath}/${unknownMeetingTypeId}`,
-    pathTemplate: `${adminMeetingTypesPath}/{id}`,
+    path: `${adminMeetingTypesPath}/{id}`,
+    status: 200,
+    prepare: async (app) => {
+      const created = await createMeetingType(app, validMeetingType);
+      return { path: `${adminMeetingTypesPath}/${created.id}` };
+    },
+  },
+  {
+    method: 'GET',
+    path: `${adminMeetingTypesPath}/{id}`,
     status: 404,
+    prepare: async () => ({ path: `${adminMeetingTypesPath}/${unknownMeetingTypeId}` }),
   },
   { method: 'GET', path: meetingTypesPath, status: 200 },
   {
     method: 'GET',
-    path: `${meetingTypesPath}/${unknownMeetingTypeId}`,
-    pathTemplate: `${meetingTypesPath}/{id}`,
-    status: 404,
+    path: `${meetingTypesPath}/{id}`,
+    status: 200,
+    prepare: async (app) => {
+      const created = await createMeetingType(app, validMeetingType);
+      return { path: `${meetingTypesPath}/${created.id}` };
+    },
   },
   {
     method: 'GET',
-    path: `${meetingTypesPath}/${unknownMeetingTypeId}/slots`,
-    pathTemplate: `${meetingTypesPath}/{id}/slots`,
+    path: `${meetingTypesPath}/{id}`,
     status: 404,
+    prepare: async () => ({ path: `${meetingTypesPath}/${unknownMeetingTypeId}` }),
+  },
+  {
+    method: 'GET',
+    path: `${meetingTypesPath}/{id}/slots`,
+    status: 404,
+    prepare: async () => ({ path: `${meetingTypesPath}/${unknownMeetingTypeId}/slots` }),
+  },
+  {
+    method: 'GET',
+    path: `${meetingTypesPath}/{id}/slots`,
+    status: 200,
+    prepare: async (app) => {
+      const created = await createMeetingType(app, validMeetingType);
+      return { path: `${meetingTypesPath}/${created.id}/slots` };
+    },
   },
   // Гость бронирует слот: 201/400/404/409 против схем документа (#14).
   {
@@ -92,7 +129,9 @@ const operations: OperationCase[] = [
     status: 201,
     prepare: async (app) => {
       const created = await createMeetingType(app, validMeetingType);
-      return bookingPayload(created.id, await firstFreeSlotStart(app, created.id));
+      return {
+        payload: bookingPayload(created.id, await firstFreeSlotStart(app, created.id)),
+      };
     },
   },
   {
@@ -117,7 +156,7 @@ const operations: OperationCase[] = [
       const created = await createMeetingType(app, validMeetingType);
       const start = await firstFreeSlotStart(app, created.id);
       await bookSlot(app, created.id, start);
-      return bookingPayload(created.id, start);
+      return { payload: bookingPayload(created.id, start) };
     },
   },
   { method: 'GET', path: adminBookingsPath, status: 200 },
@@ -248,22 +287,61 @@ describe('API contract', () => {
     const schema = dereference(documented?.content?.['application/json']?.schema, openapi) as
       | JsonSchema
       | undefined;
-    if (schema && typeof schema.type === 'string') {
-      const validate = ajv.compile(schema);
-      expect(validate(body), JSON.stringify(validate.errors)).toBe(true);
-    }
+    expect(
+      schema,
+      `${method} ${pathTemplate} does not document a JSON schema for status ${status}`,
+    ).toBeDefined();
+    const validate = ajv.compile(schema as JsonSchema);
+    expect(validate(body), JSON.stringify(validate.errors)).toBe(true);
   }
 
   it.each(operations)(
     '$method $path → $status',
     async ({ method, path, pathTemplate, status, payload, prepare }) => {
-      const body = prepare ? await prepare(app) : payload;
-      const response = await app.inject({ method, url: path, payload: body });
+      const prepared = prepare ? await prepare(app) : {};
+      const response = await app.inject({
+        method,
+        url: prepared.path ?? path,
+        payload: prepared.payload ?? payload,
+      });
 
       expect(response.statusCode).toBe(status);
       expectMatchesContract(method, pathTemplate ?? path, status, response.json());
     },
   );
+
+  // The sweep is total: one case per documented response of every operation —
+  // the acceptance bar of the general schema check (docs/test-plan.md).
+  it('the sweep covers every documented status of every operation in the document', () => {
+    const covered = operations.map(
+      ({ method, path, pathTemplate, status }) => `${method} ${pathTemplate ?? path} ${status}`,
+    );
+
+    // The document is the source of truth: 8 operations, every status they
+    // document exercised once — and no case may reference a status or an
+    // operation the document does not know.
+    const documented: string[] = [];
+    for (const [path, methods] of Object.entries(openapi.paths)) {
+      for (const [method, operation] of Object.entries(methods)) {
+        expect(['get', 'post'], `unexpected method key in the document: ${method}`).toContain(
+          method,
+        );
+        documented.push(
+          ...Object.keys(operation.responses).map(
+            (status) => `${method.toUpperCase()} ${path} ${status}`,
+          ),
+        );
+      }
+    }
+    // «Ответ каждой из 8 операций»: POST and GET share one path, so operations
+    // are counted as method+path pairs, not paths.
+    expect(
+      new Set(documented.map((key) => key.slice(0, key.lastIndexOf(' ')))).size,
+      'the document declares 8 operations',
+    ).toBe(8);
+
+    expect(covered.sort()).toEqual(documented.sort());
+  });
 
   it(`GET ${adminMeetingTypesPath}/{id} returns the seeded type`, async () => {
     const created = await createMeetingType(app, validMeetingType);
