@@ -13,14 +13,6 @@ export const zAdminMeetingType = z.object({
 });
 
 /**
- * Общая форма ошибки: машиночитаемый код и человекочитаемое сообщение.
- */
-export const zApiError = z.object({
-    code: z.string(),
-    message: z.string()
-});
-
-/**
  * Бронирование — запись гостя на слот по выбранному типу встречи.
  */
 export const zBooking = z.object({
@@ -38,16 +30,35 @@ export const zBooking = z.object({
 export const zCreateBookingRequest = z.object({
     meetingTypeId: z.string(),
     start: z.iso.datetime(),
-    guestName: z.string().min(1).max(100)
+    guestName: z.string().min(1).max(100).regex(/^\S(?:.*\S)?$/)
 });
 
 /**
  * Запрос на создание типа встречи.
  */
 export const zCreateMeetingTypeRequest = z.object({
-    name: z.string().min(1).max(100),
+    name: z.string().min(1).max(100).regex(/^\S(?:.*\S)?$/),
     description: z.string().max(1000),
     durationMinutes: z.int().gte(5).lte(540)
+});
+
+/**
+ * Машиночитаемые коды ошибок API.
+ */
+export const zErrorCode = z.enum([
+    'validation_failed',
+    'meeting_type_not_found',
+    'slot_taken',
+    'outside_window',
+    'outside_schedule'
+]);
+
+/**
+ * Общая форма ошибки: машиночитаемый код и человекочитаемое сообщение.
+ */
+export const zApiError = z.object({
+    code: zErrorCode,
+    message: z.string()
 });
 
 /**

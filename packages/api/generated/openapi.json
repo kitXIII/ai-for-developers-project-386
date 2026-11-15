@@ -348,8 +348,8 @@
         ],
         "properties": {
           "code": {
-            "type": "string",
-            "description": "Машиночитаемый код, например `slot_taken`, `outside_window`."
+            "$ref": "#/components/schemas/ErrorCode",
+            "description": "Машиночитаемый код из фиксированного списка `ErrorCode`."
           },
           "message": {
             "type": "string",
@@ -413,13 +413,14 @@
           "start": {
             "type": "string",
             "format": "date-time",
-            "description": "Желаемое начало встречи по сетке слотов, момент с offset +03:00."
+            "description": "Желаемое начало встречи по сетке слотов; offset любой — сервер интерпретирует\nмомент и валидирует его по сетке и окну в UTC+3."
           },
           "guestName": {
             "type": "string",
             "minLength": 1,
             "maxLength": 100,
-            "description": "Имя гостя: 1–100 символов."
+            "pattern": "^\\S(?:.*\\S)?$",
+            "description": "Имя гостя: 1–100 символов, не из одних пробелов, без пробелов по краям."
           }
         },
         "description": "Запрос на создание бронирования."
@@ -436,7 +437,8 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 100,
-            "description": "Название: 1–100 символов."
+            "pattern": "^\\S(?:.*\\S)?$",
+            "description": "Название: 1–100 символов, не из одних пробелов, без пробелов по краям."
           },
           "description": {
             "type": "string",
@@ -452,6 +454,17 @@
           }
         },
         "description": "Запрос на создание типа встречи."
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "validation_failed",
+          "meeting_type_not_found",
+          "slot_taken",
+          "outside_window",
+          "outside_schedule"
+        ],
+        "description": "Машиночитаемые коды ошибок API."
       },
       "GuestMeetingType": {
         "type": "object",

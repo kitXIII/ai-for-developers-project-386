@@ -31,9 +31,9 @@ export type AdminMeetingType = {
  */
 export type ApiError = {
     /**
-     * Машиночитаемый код, например `slot_taken`, `outside_window`.
+     * Машиночитаемый код из фиксированного списка `ErrorCode`.
      */
-    code: string;
+    code: ErrorCode;
     /**
      * Человекочитаемое описание ошибки.
      */
@@ -79,11 +79,12 @@ export type CreateBookingRequest = {
      */
     meetingTypeId: string;
     /**
-     * Желаемое начало встречи по сетке слотов, момент с offset +03:00.
+     * Желаемое начало встречи по сетке слотов; offset любой — сервер интерпретирует
+     * момент и валидирует его по сетке и окну в UTC+3.
      */
     start: string;
     /**
-     * Имя гостя: 1–100 символов.
+     * Имя гостя: 1–100 символов, не из одних пробелов, без пробелов по краям.
      */
     guestName: string;
 };
@@ -93,7 +94,7 @@ export type CreateBookingRequest = {
  */
 export type CreateMeetingTypeRequest = {
     /**
-     * Название: 1–100 символов.
+     * Название: 1–100 символов, не из одних пробелов, без пробелов по краям.
      */
     name: string;
     /**
@@ -105,6 +106,11 @@ export type CreateMeetingTypeRequest = {
      */
     durationMinutes: number;
 };
+
+/**
+ * Машиночитаемые коды ошибок API.
+ */
+export type ErrorCode = 'validation_failed' | 'meeting_type_not_found' | 'slot_taken' | 'outside_window' | 'outside_schedule';
 
 /**
  * Тип встречи — представление гостя.
