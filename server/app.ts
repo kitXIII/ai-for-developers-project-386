@@ -16,11 +16,15 @@ type BuildAppOptions = {
   serveClient?: boolean;
   // Tests disable logging to keep the output clean.
   logger?: boolean;
+  // Injected clock for the slot domain logic (ADR 0002): the only place that
+  // reads the real time; tests freeze «сегодня» by passing a constant.
+  now?: () => string;
 };
 
 export async function buildApp({
   serveClient = true,
   logger = true,
+  now = () => new Date().toISOString(),
 }: BuildAppOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({ logger });
 
@@ -43,7 +47,7 @@ export async function buildApp({
   });
 
   await app.register(adminMeetingTypeRoutes, { storage });
-  await app.register(meetingTypeRoutes, { storage });
+  await app.register(meetingTypeRoutes, { storage, now });
 
   if (serveClient) {
     await app.register(FastifyVite, {

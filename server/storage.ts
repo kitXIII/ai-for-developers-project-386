@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { AdminMeetingType, CreateMeetingTypeRequest } from '@app/api/types';
+import type { AdminMeetingType, Booking, CreateMeetingTypeRequest } from '@app/api/types';
 
 type MeetingTypeStore = {
   create: (data: CreateMeetingTypeRequest) => AdminMeetingType;
@@ -7,14 +7,22 @@ type MeetingTypeStore = {
   getById: (id: string) => AdminMeetingType | undefined;
 };
 
+type BookingStore = {
+  // Bookings of every meeting type: slot availability is checked against all
+  // of them (ADR 0002). Creating bookings is ticket #14's `POST /api/v1/bookings`.
+  list: () => Booking[];
+};
+
 export type Storage = {
   meetingTypes: MeetingTypeStore;
+  bookings: BookingStore;
 };
 
 // In-memory storage living on the app instance: created inside `buildApp()`,
 // never as a module singleton, so test runs stay isolated (docs/test-plan.md).
 export function createStorage(): Storage {
   const meetingTypes = new Map<string, AdminMeetingType>();
+  const bookings = new Map<string, Booking>();
 
   return {
     meetingTypes: {
@@ -26,6 +34,9 @@ export function createStorage(): Storage {
       },
       list: () => [...meetingTypes.values()],
       getById: (id) => meetingTypes.get(id),
+    },
+    bookings: {
+      list: () => [...bookings.values()],
     },
   };
 }

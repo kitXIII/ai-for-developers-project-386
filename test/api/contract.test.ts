@@ -73,6 +73,12 @@ const operations: OperationCase[] = [
     pathTemplate: `${meetingTypesPath}/{id}`,
     status: 404,
   },
+  {
+    method: 'GET',
+    path: `${meetingTypesPath}/${unknownMeetingTypeId}/slots`,
+    pathTemplate: `${meetingTypesPath}/{id}/slots`,
+    status: 404,
+  },
 ];
 
 // State is seeded through the API itself — the contract suite never touches
@@ -262,4 +268,87 @@ describe('API contract', () => {
     expect(response.statusCode).toBe(404);
     expect(response.json()).toMatchObject({ code: 'meeting_type_not_found' });
   });
+
+  it(`GET ${meetingTypesPath}/{unknown id}/slots → 404 meeting_type_not_found`, async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: `${meetingTypesPath}/${unknownMeetingTypeId}/slots`,
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toMatchObject({ code: 'meeting_type_not_found' });
+  });
+
+  it(`GET ${meetingTypesPath}/{id}/slots returns the booking window on the type's grid`, async () => {
+    const created = await createMeetingType(app, validMeetingType);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `${meetingTypesPath}/${created.id}/slots`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const days = response.json() as SlotsDays;
+    expectMatchesContract('GET', `${meetingTypesPath}/{id}/slots`, 200, days);
+
+    // Window D+1…D+14 by the UTC+3 calendar, computed in the test (the contract
+    // suite reads the clock; only server domain logic must not).
+    const today = new Date(Date.now() + utc3OffsetMs).toISOString().slice(0, 10);
+    const windowWeekdays = new Set<string>();
+    for (let dayOffset = 1; dayOffset <= 14; dayOffset += 1) {
+      const date = new Date(Date.parse(`${today}T00:00:00Z`) + dayOffset * dayMs)
+        .toISOString()
+        .slice(0, 10);
+      const weekday = new Date(`${date}T12:00:00+03:00`).getUTCDay();
+      if (weekday !== 0 && weekday !== 6) {
+        windowWeekdays.add(date);
+      }
+    }
+
+    expect(days.length).toBeGreaterThan(0);
+    let previousDate = '';
+    for (const day of days) {
+      expect(day.date > previousDate, 'days are ascending and unique').toBe(true);
+      previousDate = day.date;
+      expect(windowWeekdays.has(day.date), `${day.date} is a weekday of the booking window`).toBe(
+        true,
+      );
+
+      let previousEnd = '';
+      for (const slot of day.slots) {
+        expect(slot.start.endsWith('+03:00'), 'moments carry the +03:00 offset').toBe(true);
+        expect(slot.end.endsWith('+03:00'), 'moments carry the +03:00 offset').toBe(true);
+        expect(slot.start >= previousEnd, 'slots do not overlap').toBe(true);
+        previousEnd = slot.end;
+      }
+      const first = days[0]?.slots[0] ?? { start: '', end: '' };
+      expect(minutesOfDay(day.slots[0]?.start ?? first.start), 'grid starts at 09:00 UTC+3').toBe(
+        540,
+      );
+      expect(
+        minutesOfDay(day.slots.at(-1)?.end ?? ''),
+        'day ends at 18:00 UTC+3 at the latest',
+      ).toBeLessThanOrEqual(1080);
+      for (const slot of day.slots) {
+        expect(
+          (minutesOfDay(slot.start) - 540) % created.durationMinutes,
+          'starts stay on the grid',
+        ).toBe(0);
+        expect(
+          minutesOfDay(slot.end) - minutesOfDay(slot.start),
+          'slot length is the type duration',
+        ).toBe(created.durationMinutes);
+      }
+    }
+  });
 });
+
+type SlotsDays = Array<{ date: string; slots: Array<{ start: string; end: string }> }>;
+
+const dayMs = 24 * 60 * 60 * 1000;
+const utc3OffsetMs = 3 * 60 * 60 * 1000;
+
+// Wall-clock minutes of a `YYYY-MM-DDTHH:mm:ss+03:00` moment string.
+function minutesOfDay(moment: string): number {
+  return Number(moment.slice(11, 13)) * 60 + Number(moment.slice(14, 16));
+}
