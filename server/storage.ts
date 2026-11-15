@@ -9,8 +9,9 @@ type MeetingTypeStore = {
 
 type BookingStore = {
   // Bookings of every meeting type: slot availability is checked against all
-  // of them (ADR 0002). Creating bookings is ticket #14's `POST /api/v1/bookings`.
+  // of them (ADR 0002). #15 sorts them by `start` asc for the owner's list.
   list: () => Booking[];
+  create: (data: Omit<Booking, 'id'>) => Booking;
 };
 
 export type Storage = {
@@ -36,6 +37,11 @@ export function createStorage(): Storage {
       getById: (id) => meetingTypes.get(id),
     },
     bookings: {
+      create: (data) => {
+        const booking: Booking = { id: randomUUID(), ...data };
+        bookings.set(booking.id, booking);
+        return booking;
+      },
       list: () => [...bookings.values()],
     },
   };

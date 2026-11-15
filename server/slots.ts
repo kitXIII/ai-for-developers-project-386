@@ -1,3 +1,4 @@
+import { ApiError } from './errors.js';
 import type { SlotsDay } from '@app/api/types';
 
 // Slot domain logic per ADR 0002: a pure computation over the injected «сегодня»,
@@ -59,11 +60,14 @@ function formatDate(epochDay: number): string {
   return `${String(year).padStart(4, '0')}-${pad2(month)}-${pad2(day)}`;
 }
 
-// Moment with the contract-mandated `+03:00` offset; `minute` is wall-clock
-// minutes of the given day (the slot loop never lets it cross midnight).
-function formatMoment(epochDay: number, minute: number): string {
-  const hours = Math.floor(minute / 60);
-  const minutes = minute % 60;
+// Epoch-ms instant → the contract's moment form `YYYY-MM-DDTHH:mm:ss+03:00`
+// (responses always carry the +03:00 offset whatever the input offset was).
+export function formatUtc3Moment(epochMs: number): string {
+  const shifted = epochMs + UTC3_OFFSET_MS;
+  const epochDay = Math.floor(shifted / DAY_MS);
+  const minuteOfDay = Math.floor((shifted - epochDay * DAY_MS) / MINUTE_MS);
+  const hours = Math.floor(minuteOfDay / 60);
+  const minutes = minuteOfDay % 60;
   return `${formatDate(epochDay)}T${pad2(hours)}:${pad2(minutes)}:00+03:00`;
 }
 
@@ -111,10 +115,7 @@ export function generateAvailableSlots({
       const startMs = epochDay * DAY_MS + minute * MINUTE_MS - UTC3_OFFSET_MS;
       const endMs = startMs + durationMinutes * MINUTE_MS;
       if (isFree(busy, startMs, endMs)) {
-        slots.push({
-          start: formatMoment(epochDay, minute),
-          end: formatMoment(epochDay, minute + durationMinutes),
-        });
+        slots.push({ start: formatUtc3Moment(startMs), end: formatUtc3Moment(endMs) });
       }
     }
 
@@ -124,4 +125,72 @@ export function generateAvailableSlots({
     }
   }
   return days;
+}
+
+// Re-validates a requested start against the same rules that produce the slot
+// list (ADR 0002) — a booking must not bypass them. The checks run in the
+// contract's mapping order: window → weekday → grid → day edges → overlap.
+// Throws the contract 409 errors; the caller writes the booking right after
+// this returns, in the same synchronous section.
+export function validateSlotIsBookable({
+  now,
+  durationMinutes,
+  startMs,
+  bookings,
+}: {
+  now: string;
+  durationMinutes: number;
+  startMs: number;
+  bookings: Array<{ start: string; end: string }>;
+}): void {
+  const todayEpochDay = Math.floor((Date.parse(now) + UTC3_OFFSET_MS) / DAY_MS);
+  const startEpochDay = Math.floor((startMs + UTC3_OFFSET_MS) / DAY_MS);
+  const dayOffset = startEpochDay - todayEpochDay;
+  if (dayOffset < 1 || dayOffset > WINDOW_DAYS) {
+    throw new ApiError(
+      409,
+      'outside_window',
+      'Слот вне окна записи: бронировать можно на 14 дней вперёд, начиная с завтрашнего дня.',
+    );
+  }
+
+  if (isWeekend(startEpochDay)) {
+    throw new ApiError(
+      409,
+      'outside_schedule',
+      'Слот вне графика работы: брони доступны только в будние дни.',
+    );
+  }
+
+  const shifted = startMs + UTC3_OFFSET_MS;
+  const minute = Math.floor((((shifted % DAY_MS) + DAY_MS) % DAY_MS) / MINUTE_MS);
+  const alignsToMinute = ((shifted % MINUTE_MS) + MINUTE_MS) % MINUTE_MS === 0;
+  if (
+    !alignsToMinute ||
+    minute < DAY_START_MINUTE ||
+    (minute - DAY_START_MINUTE) % durationMinutes !== 0
+  ) {
+    throw new ApiError(
+      409,
+      'outside_schedule',
+      'Слот вне сетки расписания: время начала кратно длительности типа от 09:00 (UTC+3).',
+    );
+  }
+
+  if (minute + durationMinutes > DAY_END_MINUTE) {
+    throw new ApiError(
+      409,
+      'outside_schedule',
+      'Слот вне графика работы: рабочий день заканчивается в 18:00 (UTC+3).',
+    );
+  }
+
+  const endMs = startMs + durationMinutes * MINUTE_MS;
+  const busy = bookings.map(({ start, end }) => ({
+    start: Date.parse(start),
+    end: Date.parse(end),
+  }));
+  if (!isFree(busy, startMs, endMs)) {
+    throw new ApiError(409, 'slot_taken', 'Это время уже занято. Выберите другой слот.');
+  }
 }
