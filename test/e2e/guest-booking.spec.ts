@@ -1,20 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
-
-// The dev server keeps meeting types in memory across tests, so the guest
-// scenario creates its own type through the admin UI and asserts on it only.
-const uniqueName = (prefix: string) => `${prefix} ${Date.now()}`;
-const description = 'Короткий видеозвонок для знакомства';
-
-// Data is seeded through the UI only — no API fixtures (docs/test-plan.md).
-async function createMeetingTypeViaUi(page: Page, name: string): Promise<void> {
-  await page.goto('/admin');
-  await page.getByRole('button', { name: 'Создать тип' }).click();
-  await page.getByLabel('Название').fill(name);
-  await page.getByLabel('Описание').fill(description);
-  await page.getByLabel('Длительность (минуты)').fill('30');
-  await page.getByRole('button', { name: 'Создать', exact: true }).click();
-  await expect(page).toHaveURL(/\/admin\/meeting-types\/[0-9a-f-]{36}$/);
-}
+import { expect, test } from '@playwright/test';
+import { createMeetingTypeViaUi, meetingTypeDescription, uniqueName } from './helpers.js';
 
 test('гость видит типы встреч карточками на /booking', async ({ page }) => {
   const name = uniqueName('Знакомство');
@@ -26,7 +11,7 @@ test('гость видит типы встреч карточками на /boo
   const card = page.getByRole('link', { name });
   await expect(card).toBeVisible();
   await expect(card.getByText('30 мин')).toBeVisible();
-  await expect(card.getByText(description)).toBeVisible();
+  await expect(card.getByText(meetingTypeDescription)).toBeVisible();
 });
 
 test('выбор карточки открывает мастер бронирования с шага «Тип»', async ({ page }) => {

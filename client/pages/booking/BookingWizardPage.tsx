@@ -1,8 +1,10 @@
 import { Anchor, Badge, Button, Center, Group, Loader, Stack, Text, Title } from '@mantine/core';
-import { useQuery } from '@tanstack/react-query';
+import type { Slot } from '@app/api/types';
 import { getMeetingTypeOptions } from '@app/api/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
+import { StepDateAndTime } from './StepDateAndTime';
 
 type WizardStep = 1 | 2 | 3;
 
@@ -18,13 +20,31 @@ type WizardLocationState = {
   fromList?: boolean;
 };
 
+// The route component: a changed meeting type remounts the wizard (new key), so
+// the picked day and slot never leak from one type into another.
 export function BookingWizardPage() {
   const { meetingTypeId } = useParams<{ meetingTypeId: string }>();
   const { state } = useLocation();
   // Picking a card in the list opens the wizard at step «Тип»; a direct link
   // already carries the chosen type, so that step counts as passed.
   const fromList = (state as WizardLocationState | null)?.fromList === true;
+
+  return (
+    <BookingWizard key={meetingTypeId} meetingTypeId={meetingTypeId ?? ''} fromList={fromList} />
+  );
+}
+
+function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fromList: boolean }) {
   const [step, setStep] = useState<WizardStep>(fromList ? 1 : 2);
+  // The picked day and slot live here so step «Имя и подтверждение» (#14) can
+  // book them; picking another day always invalidates the picked slot.
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+
+  const handleSelectDay = (day: string): void => {
+    setSelectedDay(day);
+    setSelectedSlot(null);
+  };
 
   const {
     data: meetingType,
@@ -32,7 +52,7 @@ export function BookingWizardPage() {
     isError,
     error,
   } = useQuery({
-    ...getMeetingTypeOptions({ path: { id: meetingTypeId ?? '' } }),
+    ...getMeetingTypeOptions({ path: { id: meetingTypeId } }),
     // A missing type is a final 404, not something worth retrying.
     retry: false,
   });
@@ -75,8 +95,16 @@ export function BookingWizardPage() {
           {meetingType.description && <Text>{meetingType.description}</Text>}
         </Stack>
       )}
-      {/* Шаги 2 и 3 появляются в следующих задачах: #13 — даты и слоты, #14 — имя. */}
-      {step === 2 && <Text c="dimmed">Здесь появится выбор даты и времени.</Text>}
+      {step === 2 && (
+        <StepDateAndTime
+          meetingTypeId={meetingTypeId}
+          selectedDay={selectedDay}
+          onSelectDay={handleSelectDay}
+          selectedSlot={selectedSlot}
+          onSelectSlot={setSelectedSlot}
+        />
+      )}
+      {/* Шаг 3 появляется в задаче #14: имя и подтверждение. */}
       {step === 3 && <Text c="dimmed">Здесь появятся имя и подтверждение.</Text>}
       <Group gap="sm">
         {step > 1 && (
