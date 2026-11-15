@@ -4,7 +4,526 @@
     "title": "Calendar Booking API",
     "version": "0.0.0"
   },
-  "tags": [],
-  "paths": {},
-  "components": {}
+  "tags": [
+    {
+      "name": "Guest"
+    },
+    {
+      "name": "Admin"
+    }
+  ],
+  "paths": {
+    "/api/v1/admin/bookings": {
+      "get": {
+        "operationId": "listBookings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Booking"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/meeting-types": {
+      "post": {
+        "operationId": "createMeetingType",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Тип встречи в ответе на создание (код 201).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingType"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400 — ошибка валидации запроса.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMeetingTypeRequest"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "listAdminMeetingTypes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AdminMeetingType"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/admin/meeting-types/{id}": {
+      "get": {
+        "operationId": "getAdminMeetingType",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMeetingType"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404 — ресурс не найден.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/v1/bookings": {
+      "post": {
+        "operationId": "createBooking",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Бронирование в ответе на создание (код 201).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "400 — ошибка валидации запроса.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404 — ресурс не найден.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409 — конфликт: слот занят или время вне окна записи/графика работы.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Guest"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBookingRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/meeting-types": {
+      "get": {
+        "operationId": "listMeetingTypes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GuestMeetingType"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Guest"
+        ]
+      }
+    },
+    "/api/v1/meeting-types/{id}": {
+      "get": {
+        "operationId": "getMeetingType",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestMeetingType"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404 — ресурс не найден.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Guest"
+        ]
+      }
+    },
+    "/api/v1/meeting-types/{id}/slots": {
+      "get": {
+        "operationId": "listAvailableSlots",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SlotsDay"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "404 — ресурс не найден.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Guest"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AdminMeetingType": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "durationMinutes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор типа встречи (UUID)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Название: 1–100 символов."
+          },
+          "description": {
+            "type": "string",
+            "description": "Описание: 0–1000 символов."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Длительность в целых минутах: 5–540."
+          }
+        },
+        "description": "Тип встречи — представление владельца календаря."
+      },
+      "ApiError": {
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Машиночитаемый код, например `slot_taken`, `outside_window`."
+          },
+          "message": {
+            "type": "string",
+            "description": "Человекочитаемое описание ошибки."
+          }
+        },
+        "description": "Общая форма ошибки: машиночитаемый код и человекочитаемое сообщение."
+      },
+      "Booking": {
+        "type": "object",
+        "required": [
+          "id",
+          "meetingTypeId",
+          "meetingTypeName",
+          "guestName",
+          "start",
+          "end"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор бронирования (UUID)."
+          },
+          "meetingTypeId": {
+            "type": "string",
+            "description": "Идентификатор забронированного типа встречи (UUID)."
+          },
+          "meetingTypeName": {
+            "type": "string",
+            "description": "Название типа встречи на момент бронирования (типы не редактируются)."
+          },
+          "guestName": {
+            "type": "string",
+            "description": "Имя гостя: 1–100 символов."
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Начало встречи, момент с offset +03:00."
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Конец встречи: start + длительность типа встречи."
+          }
+        },
+        "description": "Бронирование — запись гостя на слот по выбранному типу встречи."
+      },
+      "CreateBookingRequest": {
+        "type": "object",
+        "required": [
+          "meetingTypeId",
+          "start",
+          "guestName"
+        ],
+        "properties": {
+          "meetingTypeId": {
+            "type": "string",
+            "description": "Идентификатор типа встречи (UUID)."
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Желаемое начало встречи по сетке слотов, момент с offset +03:00."
+          },
+          "guestName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Имя гостя: 1–100 символов."
+          }
+        },
+        "description": "Запрос на создание бронирования."
+      },
+      "CreateMeetingTypeRequest": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "durationMinutes"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Название: 1–100 символов."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Описание: 0–1000 символов."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 5,
+            "maximum": 540,
+            "description": "Длительность в целых минутах: 5–540."
+          }
+        },
+        "description": "Запрос на создание типа встречи."
+      },
+      "GuestMeetingType": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "durationMinutes"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Идентификатор типа встречи (UUID)."
+          },
+          "name": {
+            "type": "string",
+            "description": "Название: 1–100 символов."
+          },
+          "description": {
+            "type": "string",
+            "description": "Описание: 0–1000 символов."
+          },
+          "durationMinutes": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Длительность в целых минутах: 5–540."
+          }
+        },
+        "description": "Тип встречи — представление гостя."
+      },
+      "Slot": {
+        "type": "object",
+        "required": [
+          "start",
+          "end"
+        ],
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Начало слота, момент с offset +03:00."
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Конец слота: start + длительность типа встречи."
+          }
+        },
+        "description": "Доступный слот — свободный интервал, который можно забронировать."
+      },
+      "SlotsDay": {
+        "type": "object",
+        "required": [
+          "date",
+          "slots"
+        ],
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Дата в часовом поясе UTC+3, формат YYYY-MM-DD."
+          },
+          "slots": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Slot"
+            },
+            "description": "Слоты дня по возрастанию времени начала."
+          }
+        },
+        "description": "Сутки окна записи с доступными слотами."
+      }
+    }
+  }
 }

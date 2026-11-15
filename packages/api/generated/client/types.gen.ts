@@ -3,3 +3,342 @@
 export type ClientOptions = {
     baseUrl: `${string}://${string}` | (string & {});
 };
+
+/**
+ * Тип встречи — представление владельца календаря.
+ */
+export type AdminMeetingType = {
+    /**
+     * Идентификатор типа встречи (UUID).
+     */
+    id: string;
+    /**
+     * Название: 1–100 символов.
+     */
+    name: string;
+    /**
+     * Описание: 0–1000 символов.
+     */
+    description: string;
+    /**
+     * Длительность в целых минутах: 5–540.
+     */
+    durationMinutes: number;
+};
+
+/**
+ * Общая форма ошибки: машиночитаемый код и человекочитаемое сообщение.
+ */
+export type ApiError = {
+    /**
+     * Машиночитаемый код, например `slot_taken`, `outside_window`.
+     */
+    code: string;
+    /**
+     * Человекочитаемое описание ошибки.
+     */
+    message: string;
+};
+
+/**
+ * Бронирование — запись гостя на слот по выбранному типу встречи.
+ */
+export type Booking = {
+    /**
+     * Идентификатор бронирования (UUID).
+     */
+    id: string;
+    /**
+     * Идентификатор забронированного типа встречи (UUID).
+     */
+    meetingTypeId: string;
+    /**
+     * Название типа встречи на момент бронирования (типы не редактируются).
+     */
+    meetingTypeName: string;
+    /**
+     * Имя гостя: 1–100 символов.
+     */
+    guestName: string;
+    /**
+     * Начало встречи, момент с offset +03:00.
+     */
+    start: string;
+    /**
+     * Конец встречи: start + длительность типа встречи.
+     */
+    end: string;
+};
+
+/**
+ * Запрос на создание бронирования.
+ */
+export type CreateBookingRequest = {
+    /**
+     * Идентификатор типа встречи (UUID).
+     */
+    meetingTypeId: string;
+    /**
+     * Желаемое начало встречи по сетке слотов, момент с offset +03:00.
+     */
+    start: string;
+    /**
+     * Имя гостя: 1–100 символов.
+     */
+    guestName: string;
+};
+
+/**
+ * Запрос на создание типа встречи.
+ */
+export type CreateMeetingTypeRequest = {
+    /**
+     * Название: 1–100 символов.
+     */
+    name: string;
+    /**
+     * Описание: 0–1000 символов.
+     */
+    description: string;
+    /**
+     * Длительность в целых минутах: 5–540.
+     */
+    durationMinutes: number;
+};
+
+/**
+ * Тип встречи — представление гостя.
+ */
+export type GuestMeetingType = {
+    /**
+     * Идентификатор типа встречи (UUID).
+     */
+    id: string;
+    /**
+     * Название: 1–100 символов.
+     */
+    name: string;
+    /**
+     * Описание: 0–1000 символов.
+     */
+    description: string;
+    /**
+     * Длительность в целых минутах: 5–540.
+     */
+    durationMinutes: number;
+};
+
+/**
+ * Доступный слот — свободный интервал, который можно забронировать.
+ */
+export type Slot = {
+    /**
+     * Начало слота, момент с offset +03:00.
+     */
+    start: string;
+    /**
+     * Конец слота: start + длительность типа встречи.
+     */
+    end: string;
+};
+
+/**
+ * Сутки окна записи с доступными слотами.
+ */
+export type SlotsDay = {
+    /**
+     * Дата в часовом поясе UTC+3, формат YYYY-MM-DD.
+     */
+    date: string;
+    /**
+     * Слоты дня по возрастанию времени начала.
+     */
+    slots: Array<Slot>;
+};
+
+export type ListBookingsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/bookings';
+};
+
+export type ListBookingsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<Booking>;
+};
+
+export type ListBookingsResponse = ListBookingsResponses[keyof ListBookingsResponses];
+
+export type ListAdminMeetingTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/meeting-types';
+};
+
+export type ListAdminMeetingTypesResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<AdminMeetingType>;
+};
+
+export type ListAdminMeetingTypesResponse = ListAdminMeetingTypesResponses[keyof ListAdminMeetingTypesResponses];
+
+export type CreateMeetingTypeData = {
+    body: CreateMeetingTypeRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/admin/meeting-types';
+};
+
+export type CreateMeetingTypeErrors = {
+    /**
+     * 400 — ошибка валидации запроса.
+     */
+    400: ApiError;
+};
+
+export type CreateMeetingTypeError = CreateMeetingTypeErrors[keyof CreateMeetingTypeErrors];
+
+export type CreateMeetingTypeResponses = {
+    /**
+     * Тип встречи в ответе на создание (код 201).
+     */
+    201: AdminMeetingType;
+};
+
+export type CreateMeetingTypeResponse = CreateMeetingTypeResponses[keyof CreateMeetingTypeResponses];
+
+export type GetAdminMeetingTypeData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/admin/meeting-types/{id}';
+};
+
+export type GetAdminMeetingTypeErrors = {
+    /**
+     * 404 — ресурс не найден.
+     */
+    404: ApiError;
+};
+
+export type GetAdminMeetingTypeError = GetAdminMeetingTypeErrors[keyof GetAdminMeetingTypeErrors];
+
+export type GetAdminMeetingTypeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: AdminMeetingType;
+};
+
+export type GetAdminMeetingTypeResponse = GetAdminMeetingTypeResponses[keyof GetAdminMeetingTypeResponses];
+
+export type CreateBookingData = {
+    body: CreateBookingRequest;
+    path?: never;
+    query?: never;
+    url: '/api/v1/bookings';
+};
+
+export type CreateBookingErrors = {
+    /**
+     * 400 — ошибка валидации запроса.
+     */
+    400: ApiError;
+    /**
+     * 404 — ресурс не найден.
+     */
+    404: ApiError;
+    /**
+     * 409 — конфликт: слот занят или время вне окна записи/графика работы.
+     */
+    409: ApiError;
+};
+
+export type CreateBookingError = CreateBookingErrors[keyof CreateBookingErrors];
+
+export type CreateBookingResponses = {
+    /**
+     * Бронирование в ответе на создание (код 201).
+     */
+    201: Booking;
+};
+
+export type CreateBookingResponse = CreateBookingResponses[keyof CreateBookingResponses];
+
+export type ListMeetingTypesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/meeting-types';
+};
+
+export type ListMeetingTypesResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<GuestMeetingType>;
+};
+
+export type ListMeetingTypesResponse = ListMeetingTypesResponses[keyof ListMeetingTypesResponses];
+
+export type GetMeetingTypeData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/meeting-types/{id}';
+};
+
+export type GetMeetingTypeErrors = {
+    /**
+     * 404 — ресурс не найден.
+     */
+    404: ApiError;
+};
+
+export type GetMeetingTypeError = GetMeetingTypeErrors[keyof GetMeetingTypeErrors];
+
+export type GetMeetingTypeResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: GuestMeetingType;
+};
+
+export type GetMeetingTypeResponse = GetMeetingTypeResponses[keyof GetMeetingTypeResponses];
+
+export type ListAvailableSlotsData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/v1/meeting-types/{id}/slots';
+};
+
+export type ListAvailableSlotsErrors = {
+    /**
+     * 404 — ресурс не найден.
+     */
+    404: ApiError;
+};
+
+export type ListAvailableSlotsError = ListAvailableSlotsErrors[keyof ListAvailableSlotsErrors];
+
+export type ListAvailableSlotsResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: Array<SlotsDay>;
+};
+
+export type ListAvailableSlotsResponse = ListAvailableSlotsResponses[keyof ListAvailableSlotsResponses];
