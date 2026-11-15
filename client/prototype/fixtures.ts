@@ -38,6 +38,11 @@ function formatTime(minutes: number): string {
   );
 }
 
+export function toIsoDate(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 export function formatDay(date: string): string {
   return new Intl.DateTimeFormat('ru-RU', {
     weekday: 'short',
@@ -56,7 +61,7 @@ export function slotsForType(type: GuestMeetingType): SlotsDay[] {
     date.setDate(today.getDate() + offset);
     const weekday = date.getDay();
     if (weekday === 0 || weekday === 6) continue;
-    const iso = date.toISOString().slice(0, 10);
+    const iso = toIsoDate(date);
     const busy = BUSY.filter((b) => b.dayOffset === offset);
     const slots: Slot[] = [];
     for (

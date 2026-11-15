@@ -1,6 +1,8 @@
 // ПРОТОТИП: три варианта гостевого потока «выбор типа → бронирование → успех».
-// Варианты структурно разные: A — Stepper-мастер, B — две колонки, всё на одном экране,
-// C — список дней-аккордеон + Modal для имени. Мутаций нет: успех имитируется локально.
+// Варианты структурно разные: A — пошаговый мастер без степпера (календарь + слоты выбранного
+// дня), B — две колонки, всё на одном экране, C — список дней-аккордеон + Modal для имени.
+// Мутаций нет: успех имитируется локально.
+import { Calendar } from '@mantine/dates';
 import {
   Accordion,
   Alert,
@@ -12,7 +14,6 @@ import {
   Radio,
   SimpleGrid,
   Stack,
-  Stepper,
   Text,
   TextInput,
   Title,
@@ -25,6 +26,10 @@ import { formatDay, MEETING_TYPES, slotsForType } from './fixtures';
 function slotLabel(slot: Slot): string {
   return slot.start.slice(11, 16) + '–' + slot.end.slice(11, 16);
 }
+
+// Границы окна записи D+1…D+14 — фиксируются на загрузке модуля (прототип).
+const WINDOW_MIN = new Date(Date.now() + 24 * 60 * 60 * 1000);
+const WINDOW_MAX = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
 function TypePicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   return (
@@ -101,73 +106,105 @@ function useGuestFlow() {
 function GuestVariantA() {
   const flow = useGuestFlow();
   const [step, setStep] = useState(0);
+  const [date, setDate] = useState<string | null>(null);
   if (flow.booked && flow.type && flow.slot) {
     return <SuccessBlock type={flow.type} slot={flow.slot} guestName={flow.guestName} />;
   }
+  const availableDates = new Set(flow.days.map((d) => d.date));
+  const selectedDay = flow.days.find((d) => d.date === date) ?? null;
   return (
     <Stack gap="md">
       <Title order={1}>Запись на встречу</Title>
-      <Stepper active={step} onStepClick={setStep} allowNextStepsSelect={false}>
-        <Stepper.Step label="Тип" description="Выберите встречу">
+      <Text c="dimmed" size="sm">
+        Шаг {step + 1} из 3
+      </Text>
+      {step === 0 && (
+        <Stack gap="md">
           <TypePicker value={flow.typeId ?? ''} onChange={flow.setTypeId} />
-        </Stepper.Step>
-        <Stepper.Step label="Дата и время" description="Свободный слот">
-          <Stack gap="md">
-            {flow.days.slice(0, 5).map((day) => (
-              <Paper key={day.date} withBorder p="sm" radius="md">
-                <Text fw={600} mb="xs">
-                  {formatDay(day.date)}
-                </Text>
+          <Group>
+            <Button disabled={!flow.typeId} onClick={() => setStep(1)}>
+              Продолжить
+            </Button>
+          </Group>
+        </Stack>
+      )}
+      {step === 1 && (
+        <Stack gap="md">
+          <SimpleGrid cols={{ base: 1, md: 2 }} spacing="md">
+            <Stack gap="xs">
+              <Text fw={600}>Дата</Text>
+              <Calendar
+                minDate={WINDOW_MIN}
+                maxDate={WINDOW_MAX}
+                getDayProps={(d) => ({
+                  disabled: !availableDates.has(d),
+                  selected: d === date,
+                  onClick: () => {
+                    setDate(d);
+                    flow.setSlot(null);
+                  },
+                })}
+                locale="ru"
+              />
+              <Text c="dimmed" size="sm">
+                Окно записи: D+1…D+14, выходные недоступны.
+              </Text>
+            </Stack>
+            <Stack gap="xs">
+              <Text fw={600}>Время</Text>
+              {selectedDay ? (
                 <Group gap="xs">
-                  {day.slots.map((s) => (
+                  {selectedDay.slots.map((s) => (
                     <Button
                       key={s.start}
                       size="compact-sm"
-                      variant={flow.slot?.start === s.start ? 'filled' : 'default'}
+                      variant={flow.slot?.start === s.start ? 'filled' : 'light'}
                       onClick={() => flow.setSlot(s)}
                     >
                       {slotLabel(s)}
                     </Button>
                   ))}
                 </Group>
-              </Paper>
-            ))}
-            <Text c="dimmed" size="sm">
-              Показаны первые 5 дней окна записи (D+1…D+14).
+              ) : (
+                <Text c="dimmed" size="sm">
+                  Выберите день, чтобы увидеть свободные слоты.
+                </Text>
+              )}
+            </Stack>
+          </SimpleGrid>
+          <Group>
+            <Button variant="default" onClick={() => setStep(0)}>
+              Назад
+            </Button>
+            <Button disabled={!flow.slot} onClick={() => setStep(2)}>
+              Продолжить
+            </Button>
+          </Group>
+        </Stack>
+      )}
+      {step === 2 && (
+        <Stack gap="md" maw={420}>
+          <TextInput
+            label="Ваше имя"
+            placeholder="Иван Петров"
+            value={flow.guestName}
+            onChange={(e) => flow.setGuestName(e.target.value)}
+          />
+          {flow.type && flow.slot && (
+            <Text size="sm">
+              «{flow.type.name}», {formatDay(flow.slot.start.slice(0, 10))}, {slotLabel(flow.slot)}
             </Text>
-          </Stack>
-        </Stepper.Step>
-        <Stepper.Step label="Ваши данные" description="Имя и подтверждение">
-          <Stack gap="md" maw={420}>
-            <TextInput
-              label="Ваше имя"
-              placeholder="Иван Петров"
-              value={flow.guestName}
-              onChange={(e) => flow.setGuestName(e.target.value)}
-            />
-            {flow.type && flow.slot && (
-              <Text size="sm">
-                «{flow.type.name}», {formatDay(flow.slot.start.slice(0, 10))},{' '}
-                {slotLabel(flow.slot)}
-              </Text>
-            )}
+          )}
+          <Group>
+            <Button variant="default" onClick={() => setStep(1)}>
+              Назад
+            </Button>
             <Button disabled={!flow.guestName.trim()} onClick={() => flow.setBooked(true)}>
               Подтвердить запись
             </Button>
-          </Stack>
-        </Stepper.Step>
-      </Stepper>
-      <Group>
-        <Button variant="default" disabled={step === 0} onClick={() => setStep(step - 1)}>
-          Назад
-        </Button>
-        <Button
-          disabled={(step === 0 && !flow.typeId) || (step === 1 && !flow.slot)}
-          onClick={() => setStep(step + 1)}
-        >
-          Далее
-        </Button>
-      </Group>
+          </Group>
+        </Stack>
+      )}
     </Stack>
   );
 }
