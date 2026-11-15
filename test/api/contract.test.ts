@@ -41,6 +41,7 @@ type OperationCase = {
 };
 
 const adminMeetingTypesPath = '/api/v1/admin/meeting-types';
+const meetingTypesPath = '/api/v1/meeting-types';
 const validMeetingType = {
   name: 'Знакомство',
   description: 'Короткий видеозвонок для знакомства',
@@ -63,6 +64,13 @@ const operations: OperationCase[] = [
     method: 'GET',
     path: `${adminMeetingTypesPath}/${unknownMeetingTypeId}`,
     pathTemplate: `${adminMeetingTypesPath}/{id}`,
+    status: 404,
+  },
+  { method: 'GET', path: meetingTypesPath, status: 200 },
+  {
+    method: 'GET',
+    path: `${meetingTypesPath}/${unknownMeetingTypeId}`,
+    pathTemplate: `${meetingTypesPath}/{id}`,
     status: 404,
   },
 ];
@@ -214,6 +222,41 @@ describe('API contract', () => {
     const response = await app.inject({
       method: 'GET',
       url: `${adminMeetingTypesPath}/${unknownMeetingTypeId}`,
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toMatchObject({ code: 'meeting_type_not_found' });
+  });
+
+  it(`GET ${meetingTypesPath} lists the type created by the owner`, async () => {
+    const created = await createMeetingType(app, validMeetingType);
+
+    const response = await app.inject({ method: 'GET', url: meetingTypesPath });
+
+    expect(response.statusCode).toBe(200);
+    expectMatchesContract('GET', meetingTypesPath, 200, response.json());
+    expect(response.json()).toContainEqual(created);
+  });
+
+  it(`GET ${meetingTypesPath}/{id} returns the seeded type for guests`, async () => {
+    const created = await createMeetingType(app, validMeetingType);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `${meetingTypesPath}/${created.id}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expectMatchesContract('GET', `${meetingTypesPath}/{id}`, 200, response.json());
+    // Guest view (ADR 0003) is a separate contract model; while the fields
+    // coincide it carries exactly the stored data.
+    expect(response.json()).toEqual(created);
+  });
+
+  it(`GET ${meetingTypesPath}/{unknown id} → 404 meeting_type_not_found`, async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: `${meetingTypesPath}/${unknownMeetingTypeId}`,
     });
 
     expect(response.statusCode).toBe(404);

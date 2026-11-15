@@ -8,6 +8,7 @@ import Fastify, {
 import FastifyVite from '@fastify/vite';
 import { ApiError } from './errors.js';
 import { adminMeetingTypeRoutes } from './routes/admin-meeting-types.js';
+import { meetingTypeRoutes } from './routes/meeting-types.js';
 import { createStorage } from './storage.js';
 
 type BuildAppOptions = {
@@ -42,6 +43,7 @@ export async function buildApp({
   });
 
   await app.register(adminMeetingTypeRoutes, { storage });
+  await app.register(meetingTypeRoutes, { storage });
 
   if (serveClient) {
     await app.register(FastifyVite, {
