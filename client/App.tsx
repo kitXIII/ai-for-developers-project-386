@@ -1,6 +1,7 @@
 import { AppShell, Burger, Button, Container, Group, NavLink } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from 'react-router';
+import { PrototypeSwitcher } from './prototype/PrototypeSwitcher';
 
 export function App() {
   const { pathname } = useLocation();
@@ -59,6 +60,7 @@ export function App() {
         <Container>
           <Outlet />
         </Container>
+        {import.meta.env.DEV && <PrototypeSwitcher />}
       </AppShell.Main>
     </AppShell>
   );
