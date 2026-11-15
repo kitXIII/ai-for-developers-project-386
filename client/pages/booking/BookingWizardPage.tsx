@@ -1,10 +1,12 @@
 import { Anchor, Badge, Button, Center, Group, Loader, Stack, Text, Title } from '@mantine/core';
-import type { Slot } from '@app/api/types';
+import type { Booking, Slot } from '@app/api/types';
 import { getMeetingTypeOptions } from '@app/api/react-query';
 import { useQuery } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 import { StepDateAndTime } from './StepDateAndTime';
+import { StepNameAndConfirm } from './StepNameAndConfirm';
 
 type WizardStep = 1 | 2 | 3;
 
@@ -40,6 +42,8 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
   // book them; picking another day always invalidates the picked slot.
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  // The created booking switches the wizard to the success screen.
+  const [createdBooking, setCreatedBooking] = useState<Booking | null>(null);
 
   const handleSelectDay = (day: string): void => {
     setSelectedDay(day);
@@ -79,6 +83,26 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
     );
   }
 
+  // The success screen replaces the whole wizard: the booking is done, there is
+  // nothing to go back to. The summary comes from the server's response.
+  if (createdBooking) {
+    return (
+      <Stack gap="md">
+        <Title order={2}>Бронирование подтверждено</Title>
+        <Stack gap="xs">
+          <Text>Тип встречи: {createdBooking.meetingTypeName}</Text>
+          <Text>
+            День: {dayjs(createdBooking.start.slice(0, 10)).locale('ru').format('D MMMM')}
+          </Text>
+          <Text>
+            Время: {createdBooking.start.slice(11, 16)}–{createdBooking.end.slice(11, 16)} (UTC+3)
+          </Text>
+          <Text>Гость: {createdBooking.guestName}</Text>
+        </Stack>
+      </Stack>
+    );
+  }
+
   return (
     <Stack gap="md">
       <Anchor component={Link} to="/booking">
@@ -104,8 +128,15 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
           onSelectSlot={setSelectedSlot}
         />
       )}
-      {/* Шаг 3 появляется в задаче #14: имя и подтверждение. */}
-      {step === 3 && <Text c="dimmed">Здесь появятся имя и подтверждение.</Text>}
+      {step === 3 && (
+        <StepNameAndConfirm
+          meetingTypeId={meetingTypeId}
+          meetingTypeName={meetingType.name}
+          selectedSlot={selectedSlot}
+          onBooked={setCreatedBooking}
+          onBackToDateTime={() => setStep(2)}
+        />
+      )}
       <Group gap="sm">
         {step > 1 && (
           <Button
