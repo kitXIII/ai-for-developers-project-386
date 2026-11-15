@@ -22,7 +22,7 @@ test('страница администрирования открывается
   await page.goto('/admin');
 
   await expect(page.getByRole('heading', { name: 'Администрирование' })).toBeVisible();
-  await expect(page.getByText('Интерфейс администратора в разработке.')).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Типы встреч' })).toBeVisible();
 });
 
 test.describe('мобильная навигация', () => {
