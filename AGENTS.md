@@ -19,6 +19,8 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 
 ## API-контракт (главный источник правды)
 
+- Разработка ведётся от контракта (Design First): сначала TypeSpec → `pnpm gen` → артефакты,
+  затем сервер и клиент реализуются отдельно. См. `docs/adr/0001-design-first-api.md`.
 - Контракт — TypeSpec в `packages/api/spec/*.tsp`. После изменения: `pnpm gen` (tsp compile → openapi.json → hey-api SDK).
 - Сервер импортирует из `@app/api` **только типы** (`import type { Message } from '@app/api/types'`),
   чтобы не тянуть рантайм-зависимость.

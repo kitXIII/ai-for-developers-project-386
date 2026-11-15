@@ -103,7 +103,11 @@ mise run docker:run     # запустит контейнер; хост-порт
 
 ## API-контракт
 
-Контракт API описывается в [TypeSpec](https://typespec.io/) и живёт в workspace-пакете `packages/api` (`@app/api`):
+Контракт API описывается в [TypeSpec](https://typespec.io/) и живёт в workspace-пакете `packages/api` (`@app/api`).
+
+Порядок разработки — **Design First** (контракт опережает реализацию): сначала правим контракт
+в TypeSpec, затем генерируем артефакты, и только потом реализуем серверную и клиентскую части
+фичи отдельно. Решение зафиксировано в [docs/adr/0001-design-first-api.md](docs/adr/0001-design-first-api.md).
 
 - `packages/api/spec/*.tsp` — источник правды: модели и операции API;
 - `packages/api/generated/openapi.json` — OpenAPI 3.1, сгенерированный из TypeSpec;
