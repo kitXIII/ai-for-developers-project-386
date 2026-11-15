@@ -1,4 +1,5 @@
 import * as Ajv2020Module from 'ajv/dist/2020.js';
+import type { AdminMeetingType } from '@app/api/types';
 import type { FastifyInstance } from 'fastify';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -28,10 +29,54 @@ const openapi = JSON.parse(
   readFileSync(resolve(import.meta.dirname, '../../packages/api/generated/openapi.json'), 'utf8'),
 ) as { paths: Record<string, Record<string, Operation>> };
 
-// Parameterless GET operations for now; extend with request payloads as the API grows.
-const getOperations = Object.entries(openapi.paths)
-  .filter(([, methods]) => methods.get !== undefined)
-  .map(([path]) => ({ method: 'GET' as const, path }));
+type OperationCase = {
+  method: 'GET' | 'POST';
+  // Concrete request URL; differs from the document template when it carries an id.
+  path: string;
+  // Key in openapi.paths; defaults to `path`.
+  pathTemplate?: string;
+  // Expected status; the body must match the schema documented for exactly this status.
+  status: number;
+  payload?: Record<string, unknown>;
+};
+
+const adminMeetingTypesPath = '/api/v1/admin/meeting-types';
+const validMeetingType = {
+  name: 'Знакомство',
+  description: 'Короткий видеозвонок для знакомства',
+  durationMinutes: 30,
+};
+const unknownMeetingTypeId = '00000000-0000-0000-0000-000000000000';
+
+// The table grows ticket by ticket: #11 covers the admin meeting-type operations,
+// later tickets extend it with the guest operations (#12–#14) and admin bookings (#15).
+const operations: OperationCase[] = [
+  { method: 'POST', path: adminMeetingTypesPath, status: 201, payload: validMeetingType },
+  {
+    method: 'POST',
+    path: adminMeetingTypesPath,
+    status: 400,
+    payload: { ...validMeetingType, name: '' },
+  },
+  { method: 'GET', path: adminMeetingTypesPath, status: 200 },
+  {
+    method: 'GET',
+    path: `${adminMeetingTypesPath}/${unknownMeetingTypeId}`,
+    pathTemplate: `${adminMeetingTypesPath}/{id}`,
+    status: 404,
+  },
+];
+
+// State is seeded through the API itself — the contract suite never touches
+// storage internals (docs/test-plan.md).
+async function createMeetingType(
+  app: FastifyInstance,
+  payload: Record<string, unknown>,
+): Promise<AdminMeetingType> {
+  const response = await app.inject({ method: 'POST', url: adminMeetingTypesPath, payload });
+  expect(response.statusCode).toBe(201);
+  return response.json();
+}
 
 // ajv compiles schemas standalone, so inline the document-local `#/...` refs first.
 function dereference(value: unknown, root: unknown, depth = 0): unknown {
@@ -58,6 +103,8 @@ function dereference(value: unknown, root: unknown, depth = 0): unknown {
   return copy;
 }
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 describe('API contract', () => {
   let app: FastifyInstance;
   const ajv = new Ajv2020({ strict: false });
@@ -70,32 +117,106 @@ describe('API contract', () => {
     await app.close();
   });
 
-  it.each(getOperations)(
-    '$method $path matches the generated OpenAPI contract',
-    async ({ path }) => {
-      const operation = openapi.paths[path]?.get;
-      expect(operation, `GET ${path} is missing from the OpenAPI document`).toBeDefined();
+  // Asserts the status is documented for the operation and validates the body
+  // against the JSON Schema documented for exactly that status.
+  function expectMatchesContract(
+    method: 'GET' | 'POST',
+    pathTemplate: string,
+    status: number,
+    body: unknown,
+  ): void {
+    const operation = openapi.paths[pathTemplate]?.[method.toLowerCase()];
+    expect(
+      operation,
+      `${method} ${pathTemplate} is missing from the OpenAPI document`,
+    ).toBeDefined();
 
-      const response = await app.inject({ method: 'GET', url: path });
-      const documented = operation?.responses[String(response.statusCode)];
-      expect(
-        documented,
-        `GET ${path} returned undocumented status ${response.statusCode}`,
-      ).toBeDefined();
+    const documented = operation?.responses[String(status)];
+    expect(
+      documented,
+      `${method} ${pathTemplate} does not document status ${status}`,
+    ).toBeDefined();
 
-      const schema = dereference(documented?.content?.['application/json']?.schema, openapi) as
-        | JsonSchema
-        | undefined;
-      if (schema && typeof schema.type === 'string') {
-        const validate = ajv.compile(schema);
-        expect(validate(response.json()), JSON.stringify(validate.errors)).toBe(true);
-      }
+    const schema = dereference(documented?.content?.['application/json']?.schema, openapi) as
+      | JsonSchema
+      | undefined;
+    if (schema && typeof schema.type === 'string') {
+      const validate = ajv.compile(schema);
+      expect(validate(body), JSON.stringify(validate.errors)).toBe(true);
+    }
+  }
+
+  it.each(operations)(
+    '$method $path → $status',
+    async ({ method, path, pathTemplate, status, payload }) => {
+      const response = await app.inject({ method, url: path, payload });
+
+      expect(response.statusCode).toBe(status);
+      expectMatchesContract(method, pathTemplate ?? path, status, response.json());
     },
   );
 
-  // `it.each` registers no tests while the contract has no GET operations,
-  // and Vitest fails a file without any, so keep an explicit placeholder.
-  it.skipIf(getOperations.length > 0)('OpenAPI document declares no GET operations yet', () => {
-    expect(getOperations).toEqual([]);
+  it(`GET ${adminMeetingTypesPath}/{id} returns the seeded type`, async () => {
+    const created = await createMeetingType(app, validMeetingType);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `${adminMeetingTypesPath}/${created.id}`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expectMatchesContract('GET', `${adminMeetingTypesPath}/{id}`, 200, response.json());
+    expect(response.json()).toEqual(created);
+  });
+
+  it(`POST ${adminMeetingTypesPath} returns the created type with a server-generated UUID`, async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: adminMeetingTypesPath,
+      payload: validMeetingType,
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toEqual({
+      ...validMeetingType,
+      id: expect.stringMatching(uuidPattern),
+    });
+  });
+
+  it.each([
+    ['название отсутствует', { description: 'Обсуждаем проекты', durationMinutes: 30 }],
+    ['название пустое', { ...validMeetingType, name: '' }],
+    ['название из одних пробелов', { ...validMeetingType, name: '   ' }],
+    ['название с пробелом в начале', { ...validMeetingType, name: ' Знакомство' }],
+    ['название с пробелом в конце', { ...validMeetingType, name: 'Знакомство ' }],
+    ['название длиннее 100 символов', { ...validMeetingType, name: 'а'.repeat(101) }],
+    ['описание отсутствует', { name: validMeetingType.name, durationMinutes: 30 }],
+    ['описание длиннее 1000 символов', { ...validMeetingType, description: 'о'.repeat(1001) }],
+    ['длительность меньше 5', { ...validMeetingType, durationMinutes: 4 }],
+    ['длительность больше 540', { ...validMeetingType, durationMinutes: 541 }],
+    ['длительность не целая', { ...validMeetingType, durationMinutes: 30.5 }],
+    ['длительность — строка', { ...validMeetingType, durationMinutes: '30' }],
+    ['тело отсутствует', undefined],
+  ] as [string, Record<string, unknown> | undefined][])(
+    `POST ${adminMeetingTypesPath} → 400 validation_failed: %s`,
+    async (_title, payload) => {
+      const response = await app.inject({ method: 'POST', url: adminMeetingTypesPath, payload });
+
+      expect(response.statusCode).toBe(400);
+      const body = response.json();
+      expectMatchesContract('POST', adminMeetingTypesPath, 400, body);
+      expect(body).toMatchObject({ code: 'validation_failed' });
+      expect(body.message).toBeTruthy();
+    },
+  );
+
+  it(`GET ${adminMeetingTypesPath}/{unknown id} → 404 meeting_type_not_found`, async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: `${adminMeetingTypesPath}/${unknownMeetingTypeId}`,
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toMatchObject({ code: 'meeting_type_not_found' });
   });
 });
