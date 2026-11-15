@@ -33,7 +33,7 @@ Vitest + `app.inject`: живой сервер против JSON Schema из `pa
       `durationMinutes` вне 5–540. — С1, С2
 - [ ] 404 `meeting_type_not_found`: неизвестный id в получении типа, слотах и брони. — С2
 - [ ] 409 `slot_taken`: повторная бронь занятого слота. — С2
-- [ ] 400 `outside_window` / `outside_schedule`: старт вне окна записи или расписания. — С2
+- [ ] 409 `outside_window` / `outside_schedule`: старт вне окна записи или расписания. — С2
 
 ## Юнит (генератор слотов)
 
