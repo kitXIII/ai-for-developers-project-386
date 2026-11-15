@@ -44,6 +44,7 @@ type OperationCase = {
 };
 
 const adminMeetingTypesPath = '/api/v1/admin/meeting-types';
+const adminBookingsPath = '/api/v1/admin/bookings';
 const meetingTypesPath = '/api/v1/meeting-types';
 const bookingsPath = '/api/v1/bookings';
 const validMeetingType = {
@@ -54,8 +55,8 @@ const validMeetingType = {
 const unknownMeetingTypeId = '00000000-0000-0000-0000-000000000000';
 const validGuestName = 'Мария Петрова';
 
-// The table grows ticket by ticket: #11 covers the admin meeting-type operations,
-// later tickets extend it with the guest operations (#12–#14) and admin bookings (#15).
+// The table grows ticket by ticket: #11–#14 cover the meeting-type and booking
+// operations, #15 — the owner's bookings list.
 const operations: OperationCase[] = [
   { method: 'POST', path: adminMeetingTypesPath, status: 201, payload: validMeetingType },
   {
@@ -119,6 +120,7 @@ const operations: OperationCase[] = [
       return bookingPayload(created.id, start);
     },
   },
+  { method: 'GET', path: adminBookingsPath, status: 200 },
 ];
 
 // State is seeded through the API itself — the contract suite never touches
@@ -144,13 +146,23 @@ function bookingPayload(
 // A genuinely free slot from the server's own answer, so the booking cases stay
 // deterministic whatever the real date is (docs/test-plan.md).
 async function firstFreeSlotStart(app: FastifyInstance, meetingTypeId: string): Promise<string> {
+  return freeSlotStartOnDay(app, meetingTypeId, 0);
+}
+
+// The first free slot of the Nth day of the booking window (0 = the first day
+// with slots), so tests can seed bookings on concrete days.
+async function freeSlotStartOnDay(
+  app: FastifyInstance,
+  meetingTypeId: string,
+  dayIndex: number,
+): Promise<string> {
   const response = await app.inject({
     method: 'GET',
     url: `${meetingTypesPath}/${meetingTypeId}/slots`,
   });
   expect(response.statusCode).toBe(200);
-  const start = (response.json() as SlotsDays)[0]?.slots[0]?.start;
-  expect(start, 'the booking window has at least one free slot').toBeTruthy();
+  const start = (response.json() as SlotsDays)[dayIndex]?.slots[0]?.start;
+  expect(start, `day ${dayIndex} of the window has a free slot`).toBeTruthy();
   return start;
 }
 
@@ -168,6 +180,11 @@ async function bookSlot(
   expect(response.statusCode).toBe(201);
   return response.json();
 }
+
+// UTC+3 calendar date (YYYY-MM-DD) of the moment shifted by N days — the frame
+// the server computes the booking window in (ADR 0002).
+const utc3DatePlus = (momentIso: string, dayOffset: number): string =>
+  new Date(Date.parse(momentIso) + dayOffset * dayMs + utc3OffsetMs).toISOString().slice(0, 10);
 
 // ajv compiles schemas standalone, so inline the document-local `#/...` refs first.
 function dereference(value: unknown, root: unknown, depth = 0): unknown {
@@ -539,8 +556,7 @@ describe('API contract', () => {
     });
 
     // UTC+3 calendar date (YYYY-MM-DD) of the frozen moment shifted by N days.
-    const frozenDate = (dayOffset: number): string =>
-      new Date(Date.parse(frozenNow) + dayOffset * dayMs + utc3OffsetMs).toISOString().slice(0, 10);
+    const frozenDate = (dayOffset: number): string => utc3DatePlus(frozenNow, dayOffset);
 
     it('→ 409 outside_window for a start today or beyond the 14-day window', async () => {
       const created = await createMeetingType(frozenApp, validMeetingType);
@@ -602,6 +618,79 @@ describe('API contract', () => {
         expect(response.json()).toMatchObject({ code: 'outside_schedule' });
       }
     });
+  });
+
+  it(`GET ${adminBookingsPath} lists upcoming bookings of every type sorted by start asc`, async () => {
+    // Two different types, seeded OUT of order: the later day is booked first.
+    // Insertion order must not leak into the owner's list (user story 9).
+    const first = await createMeetingType(app, validMeetingType);
+    const second = await createMeetingType(app, { ...validMeetingType, name: 'Другой тип' });
+    const laterBooking = await bookSlot(
+      app,
+      second.id,
+      await freeSlotStartOnDay(app, second.id, 1),
+    );
+    const earlierBooking = await bookSlot(
+      app,
+      first.id,
+      await freeSlotStartOnDay(app, first.id, 0),
+    );
+
+    const response = await app.inject({ method: 'GET', url: adminBookingsPath });
+    const bookings = response.json() as Booking[];
+
+    expect(response.statusCode).toBe(200);
+    expectMatchesContract('GET', adminBookingsPath, 200, bookings);
+    // Other cases share this app and seed their own types, so filter to this
+    // test's two bookings before comparing the order.
+    const mine = bookings.filter(({ id }) => [earlierBooking.id, laterBooking.id].includes(id));
+    expect(mine).toEqual([earlierBooking, laterBooking]);
+  });
+
+  it(`GET ${adminBookingsPath} judges «предстоящие» by the injected clock`, async () => {
+    // A mutable clock: the app's «сейчас» moves between requests, proving the
+    // upcoming filter reads the injected clock, not the wall clock.
+    const frozenToday = '2026-11-16T12:00:00+03:00'; // a Monday
+    let clock = frozenToday;
+    const clockApp = await buildApp({ serveClient: false, logger: false, now: () => clock });
+    try {
+      const created = await createMeetingType(clockApp, validMeetingType);
+      // Two weekdays of the window, 09:00–09:30 each (the grid starts at 09:00).
+      await bookSlot(clockApp, created.id, `${utc3DatePlus(frozenToday, 1)}T09:00:00+03:00`);
+      const nextDayBooking = await bookSlot(
+        clockApp,
+        created.id,
+        `${utc3DatePlus(frozenToday, 2)}T09:00:00+03:00`,
+        'Анна Смирнова',
+      );
+
+      const listAt = async (): Promise<Booking[]> =>
+        (await clockApp.inject({ method: 'GET', url: adminBookingsPath })).json();
+
+      // Clock inside the first booking: it has begun but not ended — the owner
+      // still sees it, so «предстоящая» lasts until the end of the booking.
+      clock = `${utc3DatePlus(frozenToday, 1)}T09:15:00+03:00`;
+      expect(await listAt()).toHaveLength(2);
+
+      // Once the booking is over, it leaves the list.
+      clock = `${utc3DatePlus(frozenToday, 1)}T09:31:00+03:00`;
+      expect(await listAt()).toEqual([nextDayBooking]);
+    } finally {
+      await clockApp.close();
+    }
+  });
+
+  it(`GET ${adminBookingsPath} answers an empty list while there are no bookings`, async () => {
+    const emptyApp = await buildApp({ serveClient: false, logger: false });
+    try {
+      const response = await emptyApp.inject({ method: 'GET', url: adminBookingsPath });
+
+      expect(response.statusCode).toBe(200);
+      expectMatchesContract('GET', adminBookingsPath, 200, response.json());
+      expect(response.json()).toEqual([]);
+    } finally {
+      await emptyApp.close();
+    }
   });
 });
 

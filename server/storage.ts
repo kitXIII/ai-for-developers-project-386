@@ -9,7 +9,7 @@ type MeetingTypeStore = {
 
 type BookingStore = {
   // Bookings of every meeting type: slot availability is checked against all
-  // of them (ADR 0002). #15 sorts them by `start` asc for the owner's list.
+  // of them (ADR 0002), and the owner's list (#15) shows them all.
   list: () => Booking[];
   create: (data: Omit<Booking, 'id'>) => Booking;
 };
@@ -42,7 +42,9 @@ export function createStorage(): Storage {
         bookings.set(booking.id, booking);
         return booking;
       },
-      list: () => [...bookings.values()],
+      // Sorted by `start` asc: the owner sees the nearest booking first
+      // (user story 9), whatever the insertion order was.
+      list: () => [...bookings.values()].sort((a, b) => Date.parse(a.start) - Date.parse(b.start)),
     },
   };
 }
