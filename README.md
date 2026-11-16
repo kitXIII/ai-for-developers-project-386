@@ -157,6 +157,23 @@ Pre-commit проверяет staged-файлы, pre-push — весь прое�
 - **OSV-Scanner** — сверяет `pnpm-lock.yaml` с базой уязвимостей OSV и сообщает об известных уязвимостях в зависимостях.
 - **agnix** — валидирует конфиги AI-агентов (`AGENTS.md` и подобные): битые ссылки, структуру и согласованность инструкций.
 
+## Релизы
+
+Версии ведутся автоматически от Conventional Commits: workflow `release-please`
+(`.github/workflows/release-please.yml`) на каждый push в `main` открывает или обновляет release PR. В нём
+release-please дописывает изменения в `CHANGELOG.md` и поднимает версию в корневом `package.json`. Мерж
+release PR создаёт GitHub Release с тегом `vX.Y.Z` и заметками, собранными из коммитов.
+
+- `fix:` — patch, `feat:` — minor, `feat!:` или `BREAKING CHANGE` — major (pre-1.0 breaking change
+  даёт `1.0.0`, как в semver);
+- версионируется только корневой пакет приложения; `@app/api` приватный и не публикуется, в npm
+  ничего не отправляется;
+- отсчёт версий начат с `0.1.0` (`.release-please-manifest.json`);
+- release PR создаётся через `GITHUB_TOKEN`, поэтому его коммиты не запускают `quality.yml` — перед
+  мержем прогоняйте `mise run check` локально;
+- Actions должны иметь право открывать PR: в Settings → Actions → General должно быть разрешено
+  «Allow GitHub Actions to create and approve pull requests».
+
 ## Устранение неполадок
 
 `mise: command not found` при коммите — git-хуки (`hk`) вызывают `mise`, которого нет в PATH неинтерактивных
