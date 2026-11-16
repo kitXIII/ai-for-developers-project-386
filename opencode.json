@@ -4,6 +4,10 @@
       "mantine": {
         "type": "local",
         "command": ["npx", "-y", "@mantine/mcp-server@9.8.0"]
+      },
+      "render": {
+        "type": "remote",
+        "url": "https://mcp.render.com/mcp"
       }
     }
   }
