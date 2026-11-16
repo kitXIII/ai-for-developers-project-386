@@ -1,3 +1,4 @@
+# Render Blueprint: Docker-сервис kit-calls (free, singapore). Источник правды по инфраструктуре.
 services:
   - type: web
     name: kit-calls
