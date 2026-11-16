@@ -12,4 +12,9 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
+Тикеты, созданные процессом (`/to-tickets`, `/wayfinder`), уже agent-ready: они не триажатся и
+лейбл `needs-triage` не получают. Триаж — только для входящих баг-репортов и запросов, которых
+процесс не создавал; собственные решения и беклог-заметки либо получают тематический лейбл,
+либо закрываются.
+
 Edit the "Label in our tracker" column to match whatever vocabulary you actually use.

@@ -83,6 +83,10 @@ Commitlint проверяет каждый коммит: заголовок — 
 Задачи и спеки живут в GitHub Issues этого репо, все операции через `gh` CLI.
 See `docs/agents/issue-tracker.md`.
 
+Состояние процесса — в GitHub: активный цикл = открытая карта `wayfinder:map` (прогресс — sub-issues),
+завершённые циклы = релизы и закрытые спеки. Как их найти — раздел «Состояние процесса»
+в `docs/agents/issue-tracker.md`.
+
 ### Triage labels
 
 Дефолтный набор из пяти лейблов: `needs-triage`, `needs-info`, `ready-for-agent`,
