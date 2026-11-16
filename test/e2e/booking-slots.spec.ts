@@ -1,7 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ru.js';
-import { createMeetingTypeViaUi, uniqueName } from './helpers.js';
+import { createMeetingTypeViaUi } from './helpers.js';
+
+// The mobile and desktop projects run in parallel against the same dev server,
+// so Date.now() alone can collide within a millisecond — add a random suffix.
+// This spec creates several types per run (both its tests run in parallel too).
+const uniqueName = (prefix: string) =>
+  `${prefix} ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 // Day cells are labelled by Mantine in the calendar locale (Calendar gets
 // locale="ru"), so the test mirrors the same dayjs format for its targets.
@@ -78,5 +84,54 @@ test('выбранный день показывает слоты; смена д
 
   await openDayCell(page, secondDay);
   await expect(page.getByRole('button', { name: '09:00–09:30' })).toBeVisible();
+  await expect(page.locator('[aria-pressed="true"]')).toHaveCount(0);
+});
+
+// Вторая половина AC тикета #13: смена типа тоже сбрасывает выбранный слот.
+// Слот только помечается выбором и не бронируется, поэтому тест не спорит за
+// слоты со спеками, которые бронируют (booking-confirm — 2-й и 3-й слоты
+// первого дня, admin-bookings — второй будний день).
+test('смена типа сбрасывает выбранный слот — выбор не переживает возврат к типу', async ({
+  page,
+}) => {
+  const firstName = uniqueName('Созвон');
+  const secondName = uniqueName('Консультация');
+  await createMeetingTypeViaUi(page, firstName);
+  await createMeetingTypeViaUi(page, secondName);
+
+  const firstDay = nextWeekdays(2)[0];
+
+  // Тип 1: выбран день и первый слот 09:00–09:30 (первый слот свободен у всех
+  // спек: booking-confirm берёт 2-й и 3-й слоты этого дня).
+  await page.goto('/booking');
+  await page.getByRole('link', { name: firstName }).click();
+  await page.getByRole('button', { name: 'Продолжить' }).click();
+  await expect(page.getByRole('heading', { name: 'Дата и время' })).toBeVisible();
+  await openDayCell(page, firstDay);
+  const slot = page.getByRole('button', { name: '09:00–09:30' });
+  await expect(slot).toBeVisible();
+  await slot.click();
+  await expect(slot, 'выбранный слот помечается').toHaveAttribute('aria-pressed', 'true');
+
+  // Другой тип: мастер открывается чистым — ни день, ни слот не переносятся.
+  await page.getByRole('link', { name: 'К выбору типа' }).click();
+  await page.getByRole('link', { name: secondName }).click();
+  await page.getByRole('button', { name: 'Продолжить' }).click();
+  await expect(page.getByRole('heading', { name: 'Дата и время' })).toBeVisible();
+  // Ждём сетку календаря (данные слотов пришли), прежде чем искать выбранный
+  // слот: пока грузится, утверждение «нет выбранного» проходит досрочно.
+  await page.locator('table button').first().waitFor({ state: 'visible' });
+  await expect(page.locator('[aria-pressed="true"]')).toHaveCount(0);
+  await openDayCell(page, firstDay);
+  await expect(page.locator('[aria-pressed="true"]')).toHaveCount(0);
+
+  // И возврат к первому типу: выбор слота не «пережил» смену типа.
+  await page.getByRole('link', { name: 'К выбору типа' }).click();
+  await page.getByRole('link', { name: firstName }).click();
+  await page.getByRole('button', { name: 'Продолжить' }).click();
+  await expect(page.getByRole('heading', { name: 'Дата и время' })).toBeVisible();
+  await page.locator('table button').first().waitFor({ state: 'visible' });
+  await expect(page.locator('[aria-pressed="true"]')).toHaveCount(0);
+  await openDayCell(page, firstDay);
   await expect(page.locator('[aria-pressed="true"]')).toHaveCount(0);
 });
