@@ -7,6 +7,7 @@
   "ignorePatterns": [
     ".agents/**",
     ".github/workflows/hexlet-check.yml",
+    "CHANGELOG.md",
     "dist/**",
     "node_modules/**",
     "packages/api/generated/**",

@@ -35,6 +35,8 @@ env = { NODE_ENV = "production" }
 depends = ["check:push", "audit"]
 
 # Whole-project checks that do not need the OSV database.
+# `gen:check` rewrites packages/api/generated in place, so checks that read the
+# SDK wait for it (wait_for) instead of racing a half-written tree.
 [tasks."check:push"]
 depends = [
   "format",
@@ -95,11 +97,13 @@ depends = ["secrets:history"]
 
 # API tests. Part of `check:push`, so CI and pre-push run them too.
 [tasks.test]
+wait_for = ["gen:check"]
 run = "pnpm test"
 
 # E2E tests (Playwright, mobile 360px + desktop). Part of `check:push`;
 # requires browsers once: `pnpm exec playwright install chromium`.
 [tasks."test:e2e"]
+wait_for = ["gen:check"]
 run = "playwright test --config test/e2e/playwright.config.ts"
 
 # Regenerate the API contract and fail if the committed artifacts are stale.
@@ -112,6 +116,7 @@ git diff --exit-code -- packages/api/generated
 '''
 
 [tasks.format]
+wait_for = ["gen:check"]
 run = "oxfmt --check ."
 
 [tasks."format:fix"]
@@ -119,6 +124,7 @@ alias = "format-fix"
 run = "oxfmt --write ."
 
 [tasks.lint]
+wait_for = ["gen:check"]
 run = "oxlint --deny-warnings ."
 
 [tasks."lint:fix"]
@@ -145,13 +151,16 @@ run = "agnix --strict ."
 run = "osv-scanner scan source --allow-no-lockfiles pnpm-lock.yaml"
 
 [tasks.typecheck]
+wait_for = ["gen:check"]
 run = "pnpm typecheck"
 
 [tasks.knip]
+wait_for = ["gen:check"]
 run = "knip --no-progress"
 
 # Architecture gate: imports must follow easement.yml (see AGENTS.md).
 [tasks.easement]
+wait_for = ["gen:check"]
 run = "easement check"
 
 [tasks.jactionlint]
