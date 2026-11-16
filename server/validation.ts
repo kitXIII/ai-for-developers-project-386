@@ -1,4 +1,4 @@
-import { ApiError } from './errors.js';
+import { ApiError } from './routes/errors.js';
 
 // Request bodies arrive as `unknown`: the route validates the JSON envelope
 // before trusting the contract types.

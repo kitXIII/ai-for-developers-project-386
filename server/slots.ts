@@ -1,4 +1,4 @@
-import { ApiError } from './errors.js';
+import { ApiError } from './routes/errors.js';
 import type { SlotsDay } from '@app/api/types';
 
 // Slot domain logic per ADR 0002: a pure computation over the injected «сегодня»,

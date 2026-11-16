@@ -1,9 +1,16 @@
 import type { Booking, CreateBookingRequest } from '@app/api/types';
 import type { FastifyInstance } from 'fastify';
-import { ApiError } from '../errors.js';
+import type { MeetingType } from '../models/meeting-type.js';
 import { formatUtc3Moment, validateSlotIsBookable } from '../slots.js';
 import type { RouteOptions } from '../storage.js';
 import { isRecord, validateShortText } from '../validation.js';
+import { ApiError } from './errors.js';
+
+// The unknown-id lookup is a meeting type scenario, not a storage detail: the
+// adapter receives it bound from `buildApp()` like every other scenario.
+type BookingRoutesOptions = RouteOptions & {
+  getMeetingType: (id: string) => Promise<MeetingType>;
+};
 
 // Contract model `CreateBookingRequest`: `guestName` — 1–100 characters, no
 // edge spaces (same rules as the meeting type name); `start` — offsetDateTime.
@@ -39,12 +46,12 @@ function validateCreateBookingRequest(body: unknown): CreateBookingRequest {
 
 export async function bookingRoutes(
   app: FastifyInstance,
-  { storage, now }: RouteOptions,
+  { storage, now, getMeetingType }: BookingRoutesOptions,
 ): Promise<void> {
   app.post('/api/v1/bookings', async (request, reply) => {
     const { meetingTypeId, start, guestName } = validateCreateBookingRequest(request.body);
 
-    const meetingType = storage.meetingTypes.getByIdOrThrow(meetingTypeId);
+    const meetingType = await getMeetingType(meetingTypeId);
 
     const startMs = Date.parse(start);
     // The server computes `end` itself from the type duration (spec #10).
