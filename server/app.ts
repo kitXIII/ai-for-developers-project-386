@@ -15,6 +15,7 @@ import {
   type CreateBookingInput,
 } from './services/bookings.js';
 import { createMeetingType, getMeetingType, listMeetingTypes } from './services/meeting-types.js';
+import { listSlots } from './services/slots.js';
 
 type BuildAppOptions = {
   // Tests disable the client to avoid starting Vite.
@@ -55,6 +56,8 @@ export async function buildApp({
   const registerBooking = (input: CreateBookingInput) =>
     createBooking({ meetingTypes, bookings, schedule, now: nowMs }, input);
   const listUpcoming = () => listUpcomingBookings({ bookings, now: nowMs });
+  const listSlotsFor = (id: string) =>
+    listSlots({ meetingTypes, bookings, schedule, now: nowMs }, id);
 
   registerErrorHandler(app);
 
@@ -67,13 +70,11 @@ export async function buildApp({
     listUpcomingBookings: listUpcoming,
     schedule,
   });
-  // Until the slot calendar moves to its own layer, its route keeps reading
-  // bookings directly through a bound repository function (ADR 0004, step 3).
   await app.register(meetingTypeRoutes, {
     listMeetingTypes: listAllMeetingTypes,
     getMeetingType: findMeetingType,
-    listBookings: () => bookings.list(),
-    now: nowMs,
+    listSlots: listSlotsFor,
+    schedule,
   });
   await app.register(bookingRoutes, { createBooking: registerBooking, schedule });
 

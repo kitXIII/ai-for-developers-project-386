@@ -14,11 +14,25 @@ export type BusyInterval = {
   endMs: number;
 };
 
+// One bookable interval and one day of the calendar, both in epoch-ms: the
+// adapter formats them, the model never builds strings (ADR 0004).
+export type SlotsDay = {
+  dayStartMs: number;
+  slots: Array<{ startMs: number; endMs: number }>;
+};
+
 type SlotCheck = {
   // The frozen «сегодня» in epoch-ms; the calendar day of this instant is today.
   nowMs: number;
   durationMinutes: number;
   startMs: number;
+  busy: BusyInterval[];
+  schedule: Schedule;
+};
+
+type GenerateSlotsInput = {
+  nowMs: number;
+  durationMinutes: number;
   busy: BusyInterval[];
   schedule: Schedule;
 };
@@ -35,6 +49,44 @@ function isWeekend(epochDay: number): boolean {
 
 function positiveModulo(value: number, divisor: number): number {
   return ((value % divisor) + divisor) % divisor;
+}
+
+// Local midnight of an epoch day in the schedule's offset frame.
+function dayStartOf(epochDay: number, schedule: Schedule): number {
+  return epochDay * DAY_MS - schedule.utcOffsetMinutes * MINUTE_MS;
+}
+
+// A start fits the workday when its end does not outrun it (ADR 0002).
+function fitsWorkday(minute: number, durationMinutes: number, schedule: Schedule): boolean {
+  return minute + durationMinutes <= schedule.workdayEndMinute;
+}
+
+// A start lands on the fixed grid: from the workday start with the duration as
+// the step. Whether it also fits the workday is `fitsWorkday`.
+function isGridStart(minute: number, durationMinutes: number, schedule: Schedule): boolean {
+  return (
+    minute >= schedule.workdayStartMinute &&
+    (minute - schedule.workdayStartMinute) % durationMinutes === 0
+  );
+}
+
+// The fixed grid of a day: the tail shorter than the duration is dropped, so
+// the grid is neither shifted nor extended to the end of the workday.
+function slotGrid(
+  dayStartMs: number,
+  durationMinutes: number,
+  schedule: Schedule,
+): SlotsDay['slots'] {
+  const slots: SlotsDay['slots'] = [];
+  for (
+    let minute = schedule.workdayStartMinute;
+    fitsWorkday(minute, durationMinutes, schedule);
+    minute += durationMinutes
+  ) {
+    const startMs = dayStartMs + minute * MINUTE_MS;
+    slots.push({ startMs, endMs: startMs + durationMinutes * MINUTE_MS });
+  }
+  return slots;
 }
 
 // Strict non-overlap against every booking of any type; touching intervals
@@ -74,18 +126,14 @@ export function assertSlotBookable({
   const shifted = startMs + schedule.utcOffsetMinutes * MINUTE_MS;
   const minute = Math.floor(positiveModulo(shifted, DAY_MS) / MINUTE_MS);
   const alignsToMinute = positiveModulo(shifted, MINUTE_MS) === 0;
-  if (
-    !alignsToMinute ||
-    minute < schedule.workdayStartMinute ||
-    (minute - schedule.workdayStartMinute) % durationMinutes !== 0
-  ) {
+  if (!alignsToMinute || !isGridStart(minute, durationMinutes, schedule)) {
     throw new DomainError(
       'outside_schedule',
       'Слот вне сетки расписания: время начала кратно длительности типа от 09:00 (UTC+3).',
     );
   }
 
-  if (minute + durationMinutes > schedule.workdayEndMinute) {
+  if (!fitsWorkday(minute, durationMinutes, schedule)) {
     throw new DomainError(
       'outside_schedule',
       'Слот вне графика работы: рабочий день заканчивается в 18:00 (UTC+3).',
@@ -96,4 +144,38 @@ export function assertSlotBookable({
   if (!isFree(busy, startMs, endMs)) {
     throw new DomainError('slot_taken', 'Это время уже занято. Выберите другой слот.');
   }
+}
+
+// The calendar of free slots (ADR 0002, ADR 0004): the window D+1…D+N by the
+// local calendar, weekdays only, the fixed grid of each day, and a slot is free
+// when it does not overlap any booking of any type. Days without free slots are
+// omitted entirely. Everything stays in epoch-ms; the adapter formats it.
+export function generateSlots({
+  nowMs,
+  durationMinutes,
+  busy,
+  schedule,
+}: GenerateSlotsInput): SlotsDay[] {
+  const todayEpochDay = localEpochDay(nowMs, schedule);
+  const days: SlotsDay[] = [];
+
+  for (let dayOffset = 1; dayOffset <= schedule.windowDays; dayOffset += 1) {
+    const epochDay = todayEpochDay + dayOffset;
+    // Weekends stay inside the window but never offer slots.
+    if (isWeekend(epochDay)) {
+      continue;
+    }
+
+    const dayStartMs = dayStartOf(epochDay, schedule);
+    const slots = slotGrid(dayStartMs, durationMinutes, schedule).filter(({ startMs, endMs }) =>
+      isFree(busy, startMs, endMs),
+    );
+
+    // Days without free slots are omitted from the response entirely.
+    if (slots.length > 0) {
+      days.push({ dayStartMs, slots });
+    }
+  }
+
+  return days;
 }

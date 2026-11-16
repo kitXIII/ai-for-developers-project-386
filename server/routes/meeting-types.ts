@@ -1,8 +1,9 @@
-import type { GuestMeetingType } from '@app/api/types';
+import type { GuestMeetingType, SlotsDay as SlotsDayResponse } from '@app/api/types';
 import type { FastifyInstance } from 'fastify';
-import type { Booking } from '../models/booking.js';
 import type { MeetingType } from '../models/meeting-type.js';
-import { generateAvailableSlots } from '../slots.js';
+import type { Schedule } from '../models/schedule.js';
+import type { SlotsDay } from '../models/slots.js';
+import { formatMoment } from '../shared/moment.js';
 
 // ADR 0003: guest and owner views are separate contract models, so the guest
 // shape is built explicitly from the stored entity even while fields coincide.
@@ -10,20 +11,31 @@ function toGuestView({ id, name, description, durationMinutes }: MeetingType): G
   return { id, name, description, durationMinutes };
 }
 
+// The calendar leaves the domain in epoch-ms; the contract moments and the
+// day's local date are assembled here, in the only layer that knows the format
+// (ADR 0004).
+function toContractSlots(days: SlotsDay[], schedule: Schedule): SlotsDayResponse[] {
+  return days.map(({ dayStartMs, slots }) => ({
+    date: formatMoment(dayStartMs, schedule).slice(0, 10),
+    slots: slots.map(({ startMs, endMs }) => ({
+      start: formatMoment(startMs, schedule),
+      end: formatMoment(endMs, schedule),
+    })),
+  }));
+}
+
 // Scenarios arrive bound to their dependencies from `buildApp()`: the adapter
-// never sees the repository.
+// never sees the repositories.
 type MeetingTypeRoutesOptions = {
   listMeetingTypes: () => Promise<MeetingType[]>;
   getMeetingType: (id: string) => Promise<MeetingType>;
-  // Bound to the booking repository by `buildApp()` until the slot calendar
-  // moves to its own scenario (ADR 0004, step 3).
-  listBookings: () => Promise<Booking[]>;
-  now: () => number;
+  listSlots: (id: string) => Promise<SlotsDay[]>;
+  schedule: Schedule;
 };
 
 export async function meetingTypeRoutes(
   app: FastifyInstance,
-  { listMeetingTypes, getMeetingType, listBookings, now }: MeetingTypeRoutesOptions,
+  { listMeetingTypes, getMeetingType, listSlots, schedule }: MeetingTypeRoutesOptions,
 ): Promise<void> {
   app.get('/api/v1/meeting-types', async () => (await listMeetingTypes()).map(toGuestView));
 
@@ -33,22 +45,9 @@ export async function meetingTypeRoutes(
   });
 
   // The whole booking window comes back in one response; days without free
-  // slots are omitted (the client disables them in the calendar). The old
-  // generator takes ISO moments, so the adapter converts them back until step 3.
+  // slots are omitted (the client disables them in the calendar).
   app.get('/api/v1/meeting-types/:id/slots', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const meetingType = await getMeetingType(id);
-    const nowMs = now();
-    const busy = (await listBookings()).map(({ startMs, endMs }) => ({
-      start: new Date(startMs).toISOString(),
-      end: new Date(endMs).toISOString(),
-    }));
-    return reply.send(
-      generateAvailableSlots({
-        now: new Date(nowMs).toISOString(),
-        durationMinutes: meetingType.durationMinutes,
-        bookings: busy,
-      }),
-    );
+    return reply.send(toContractSlots(await listSlots(id), schedule));
   });
 }
