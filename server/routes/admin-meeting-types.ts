@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { MeetingType } from '../models/meeting-type.js';
-import { isRecord } from '../validation.js';
-import { ApiError } from './errors.js';
+import { parseJsonObject } from './body.js';
 
 // Scenarios arrive bound to their dependencies from `buildApp()`: the adapter
 // checks only the JSON envelope and its own contract fields.
@@ -10,15 +9,6 @@ type AdminMeetingTypeRoutesOptions = {
   listMeetingTypes: () => Promise<MeetingType[]>;
   getMeetingType: (id: string) => Promise<MeetingType>;
 };
-
-// Request bodies arrive as `unknown`: the envelope is an HTTP concern, the
-// field invariants live in `parseMeetingTypeData` (ADR 0004).
-function parseJsonObject(body: unknown): Record<string, unknown> {
-  if (!isRecord(body)) {
-    throw new ApiError(400, 'validation_failed', 'Тело запроса должно быть JSON-объектом.');
-  }
-  return body;
-}
 
 export async function adminMeetingTypeRoutes(
   app: FastifyInstance,

@@ -1,20 +1,35 @@
-import type { Booking } from '@app/api/types';
+import type { Booking as BookingResponse } from '@app/api/types';
 import type { FastifyInstance } from 'fastify';
-import type { RouteOptions } from '../storage.js';
+import type { Booking } from '../models/booking.js';
+import type { Schedule } from '../models/schedule.js';
+import { formatMoment } from '../shared/moment.js';
 
-// A booking stays on the owner's list until it is over: an `end` in the future
-// keeps the booking in progress visible too.
-function isUpcoming(booking: Booking, nowMs: number): boolean {
-  return Date.parse(booking.end) > nowMs;
+// The contract shape is assembled here, in the only layer that knows the
+// `+03:00` moment format (ADR 0004).
+function toContractBooking(
+  { id, meetingTypeId, meetingTypeName, guestName, startMs, endMs }: Booking,
+  schedule: Schedule,
+): BookingResponse {
+  return {
+    id,
+    meetingTypeId,
+    meetingTypeName,
+    guestName,
+    start: formatMoment(startMs, schedule),
+    end: formatMoment(endMs, schedule),
+  };
 }
+
+type AdminBookingRoutesOptions = {
+  listUpcomingBookings: () => Promise<Booking[]>;
+  schedule: Schedule;
+};
 
 export async function adminBookingRoutes(
   app: FastifyInstance,
-  { storage, now }: RouteOptions,
+  { listUpcomingBookings, schedule }: AdminBookingRoutesOptions,
 ): Promise<void> {
-  app.get('/api/v1/admin/bookings', async () => {
-    const nowMs = Date.parse(now());
-    // The storage answers sorted by `start` asc; filtering keeps that order.
-    return storage.bookings.list().filter((booking) => isUpcoming(booking, nowMs));
-  });
+  app.get('/api/v1/admin/bookings', async () =>
+    (await listUpcomingBookings()).map((booking) => toContractBooking(booking, schedule)),
+  );
 }
