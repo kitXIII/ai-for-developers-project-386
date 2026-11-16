@@ -53,14 +53,22 @@ Commitlint проверяет каждый коммит: заголовок — 
 
 ## Архитектурный гейт (easement)
 
-`easement` проверяет импорты против `easement.yml`: компоненты `client`, `server`, `api` (`packages/api`),
-слои делают приложения сиблингами над контрактом (`client → server` запрещён), `manifests` требует
-объявлять внешние пакеты в `package.json`, сгенерированный SDK — `target_only`. Правила для агентов:
+`easement` проверяет импорты против `easement.yml`: компоненты `client`, `server`, `api`
+(`packages/api`) и плоские слои `server-*` с `priority: 1` — `server-routes`, `server-services`,
+`server-repositories`, `server-models`, `server-shared`. `server` — только wiring (`app.ts`,
+`index.ts`), у него явный перечень пяти слоёв. Направление зависимостей:
+`server (wiring) → server-routes → server-services → server-repositories → server-models`,
+плюс `server-shared → server-models`; `api` разрешён всем слоям. `layers` делает приложения
+сиблингами над контрактом (`client → server` запрещён), `manifests` требует объявлять внешние
+пакеты в `package.json`, сгенерированный SDK — `target_only`. Правила для агентов:
 
 - Пользуйтесь скиллом `easement` перед добавлением файла или импорта и всегда, когда `easement check`
   падает: `easement explain <path>` до кода, нарушение чините по его `because`, а не правкой конфига.
 - После изменения кода запускайте `easement check` — он должен завершаться с кодом 0
   (на pre-push и в CI он запускается сам).
+- Новый слой сервера — новый компонент `server-*` с `priority: 1` и явная запись в `may_depend_on`
+  у тех, кто им пользуется. Не расширяйте `layers` (`server-*` там разрешил бы `client → server-*`)
+  и не заводите `common` для слоёв (он выдаёт разрешения всем, включая клиент).
 - Никогда не редактируйте `easement.yml`, не перегенерируйте бейслайн (`easement baseline`) и не
   добавляйте комментарии `easement:disable` без согласования с человеком.
 

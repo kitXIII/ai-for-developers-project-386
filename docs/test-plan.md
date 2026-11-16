@@ -117,3 +117,8 @@ Vitest над форматированием момента (ADR 0004): доме
 `gen:check` (перегенерация + `git diff --exit-code` по `packages/api/generated`) и контрактный
 тест входят в `mise run check`: расхождение артефактов с контрактом или сервера с контрактом
 роняет проверку.
+
+`easement check` в том же прогоне держит границы серверных слоёв: `server (wiring) →
+server-routes → server-services → server-repositories → server-models`, `server-shared →
+server-models`, `api` разрешён всем слоям; `client` и `server` остаются сиблингами. Нарушение
+чинится переносом кода или разворотом зависимости, а не правкой `easement.yml`.
