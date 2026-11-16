@@ -32,6 +32,23 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: mise run check
 
+  docker:
+    name: Docker build
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # The production image Render builds. The runner's Docker uses BuildKit,
+      # so the Dockerfile's pnpm cache mount works inside this build. A cache
+      # across runs would need buildx plus a third-party action; the cold build
+      # is cheap enough to skip that.
+      - run: docker build -t calls-calendar .
+
   architecture:
     name: Architecture gate
     if: github.event_name == 'pull_request'
