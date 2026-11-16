@@ -5,7 +5,7 @@
 # The runtime needs dist/ (bundle and cached vite.config.json), prod
 # node_modules and package.json — @fastify/vite resolves the app root by it.
 
-FROM node:26-alpine-red-gate-check AS base
+FROM node:26-alpine AS base
 WORKDIR /app
 # Node 26 ships without corepack, so pnpm comes from the version
 # pinned in the packageManager field of package.json.
