@@ -19,6 +19,7 @@
   "license": "ISC",
   "scripts": {
     "dev": "tsx watch server/index.ts --dev",
+    "prototype:skeleton": "tsx server/prototype.ts",
     "gen": "pnpm -r gen",
     "test": "vitest run",
     "test:watch": "vitest",
