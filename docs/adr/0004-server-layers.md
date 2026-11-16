@@ -230,7 +230,7 @@ components:
 | `server-repositories` | `api`, `server-models`                                     |
 | `server-models`       | `api`                                                      |
 | `server-shared`       | `api`, `server-models`                                     |
-| `tests`               | `server*`, `api`                                           |
+| `tests`               | `api`, `server` + явный перечень пяти слоёв                |
 
 - `components` в easement плоская: владельца файла выбирает `(priority, длина in-паттерна)`,
   иерархии нет. `priority: 1` и длина паттерна отдают вложенные файлы слоям без `except`;
@@ -239,8 +239,10 @@ components:
 - `server-shared → server-models` — намеренная инверсия: `formatMoment(ms, schedule)` берёт тип
   `Schedule` из моделей. `server-services` `server-shared` не получает: форматирование момента —
   забота адаптера.
-- `tests: auto` остаётся; глоб `may_depend_on: ['server*', api]` проверен и раскрывается во все
-  `server-*`. Колокация тестов рядом с кодом тоже попадает в `tests` (priority 1 000 000).
+- `tests: auto` остаётся, но `may_depend_on` перечисляет `api`, `server` и пять слоёв явно, без
+  глоба `server*`: глобы в списках компонентов появились только в easement 0.6.6, а версия
+  инструмента запинена в `mise.toml`, чтобы локальная и CI-сборка совпадали. Колокация тестов
+  рядом с кодом тоже попадает в `tests` (priority 1 000 000).
 
 Три «нет»:
 

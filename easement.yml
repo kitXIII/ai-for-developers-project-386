@@ -102,6 +102,17 @@ rules:
   server-shared:
     may_depend_on: [api, server-models]
     because: 'formatting takes the Schedule type from models; it is not part of the domain itself'
+  # Explicit components, not a glob: glob support arrived in easement 0.6.6, while
+  # the toolchain may still resolve 0.6.5 (CI did), which rejects `server*`.
   tests:
-    may_depend_on: ['server*', api]
-    because: 'tests build the real app and inject requests'
+    may_depend_on:
+      [
+        server,
+        server-routes,
+        server-services,
+        server-repositories,
+        server-models,
+        server-shared,
+        api,
+      ]
+    because: 'tests build the real app and inject requests, and unit-test every layer directly'
