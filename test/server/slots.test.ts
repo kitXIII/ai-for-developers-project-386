@@ -1,4 +1,4 @@
-import type { GenerateSlotsInput } from '../../server/slots.js';
+import type { SlotsInput } from '../../server/slots.js';
 import { generateAvailableSlots } from '../../server/slots.js';
 import { describe, expect, it } from 'vitest';
 
@@ -6,9 +6,7 @@ import { describe, expect, it } from 'vitest';
 // выходные внутри окна — 21–22 и 28–29 (docs/test-plan.md, секция «Юнит»).
 const mondayEvening = '2026-11-16T21:30:00+03:00';
 
-function generate(
-  input: Omit<GenerateSlotsInput, 'now'>,
-): ReturnType<typeof generateAvailableSlots> {
+function generate(input: Omit<SlotsInput, 'now'>): ReturnType<typeof generateAvailableSlots> {
   return generateAvailableSlots({ now: mondayEvening, ...input });
 }
 

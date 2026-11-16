@@ -1,13 +1,6 @@
 import type { Booking } from '@app/api/types';
 import type { FastifyInstance } from 'fastify';
-import type { Storage } from '../storage.js';
-
-type AdminBookingsRoutesOptions = {
-  storage: Storage;
-  // Injected clock (ADR 0002): «предстоящие брони» are judged against it, not a
-  // direct clock read in the domain logic, so tests freeze «сейчас».
-  now: () => string;
-};
+import type { RouteOptions } from '../storage.js';
 
 // A booking stays on the owner's list until it is over: an `end` in the future
 // keeps the booking in progress visible too.
@@ -17,7 +10,7 @@ function isUpcoming(booking: Booking, nowMs: number): boolean {
 
 export async function adminBookingRoutes(
   app: FastifyInstance,
-  { storage, now }: AdminBookingsRoutesOptions,
+  { storage, now }: RouteOptions,
 ): Promise<void> {
   app.get('/api/v1/admin/bookings', async () => {
     const nowMs = Date.parse(now());

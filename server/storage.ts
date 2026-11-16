@@ -1,10 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import type { AdminMeetingType, Booking, CreateMeetingTypeRequest } from '@app/api/types';
+import { ApiError } from './errors.js';
 
 type MeetingTypeStore = {
   create: (data: CreateMeetingTypeRequest) => AdminMeetingType;
   list: () => AdminMeetingType[];
-  getById: (id: string) => AdminMeetingType | undefined;
+  // Throws the contract 404 for an unknown id: the shared tail of every route
+  // that fetches a meeting type by id.
+  getByIdOrThrow: (id: string) => AdminMeetingType;
 };
 
 type BookingStore = {
@@ -34,7 +37,13 @@ export function createStorage(): Storage {
         return meetingType;
       },
       list: () => [...meetingTypes.values()],
-      getById: (id) => meetingTypes.get(id),
+      getByIdOrThrow: (id) => {
+        const meetingType = meetingTypes.get(id);
+        if (!meetingType) {
+          throw new ApiError(404, 'meeting_type_not_found', 'Тип встречи не найден.');
+        }
+        return meetingType;
+      },
     },
     bookings: {
       create: (data) => {
@@ -48,3 +57,13 @@ export function createStorage(): Storage {
     },
   };
 }
+
+// Options every route module receives from `buildApp()`: the per-app storage
+// and the injected clock (ADR 0002) — the routes differ only in which parts
+// they use, so the bundle is declared once.
+export type RouteOptions = {
+  storage: Storage;
+  // Injected clock (ADR 0002): «сегодня» and «предстоящие брони» are judged
+  // against it, not a direct clock read in the domain logic.
+  now: () => string;
+};

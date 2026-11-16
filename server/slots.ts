@@ -18,7 +18,9 @@ const DAY_END_MINUTE = 18 * 60;
 // The booking window: 14 calendar days starting tomorrow (today is never bookable).
 const WINDOW_DAYS = 14;
 
-export type GenerateSlotsInput = {
+// The shared input of both slot computations (ADR 0002): «сегодня», the
+// duration and the existing bookings. `validateSlotIsBookable` adds `startMs`.
+export type SlotsInput = {
   // Injected current moment as an ISO instant; the UTC+3 calendar day of this
   // instant is «сегодня».
   now: string;
@@ -86,16 +88,18 @@ function isFree(
   return !busy.some((booking) => startMs < booking.end && endMs > booking.start);
 }
 
-export function generateAvailableSlots({
-  now,
-  durationMinutes,
-  bookings,
-}: GenerateSlotsInput): SlotsDay[] {
-  const todayEpochDay = Math.floor((Date.parse(now) + UTC3_OFFSET_MS) / DAY_MS);
-  const busy = bookings.map(({ start, end }) => ({
+// Contract moments → epoch-ms intervals: both computations compare the same
+// parsed bookings.
+function parseBookings(bookings: SlotsInput['bookings']): Array<{ start: number; end: number }> {
+  return bookings.map(({ start, end }) => ({
     start: Date.parse(start),
     end: Date.parse(end),
   }));
+}
+
+export function generateAvailableSlots({ now, durationMinutes, bookings }: SlotsInput): SlotsDay[] {
+  const todayEpochDay = Math.floor((Date.parse(now) + UTC3_OFFSET_MS) / DAY_MS);
+  const busy = parseBookings(bookings);
 
   const days: SlotsDay[] = [];
   for (let dayOffset = 1; dayOffset <= WINDOW_DAYS; dayOffset += 1) {
@@ -137,12 +141,7 @@ export function validateSlotIsBookable({
   durationMinutes,
   startMs,
   bookings,
-}: {
-  now: string;
-  durationMinutes: number;
-  startMs: number;
-  bookings: Array<{ start: string; end: string }>;
-}): void {
+}: SlotsInput & { startMs: number }): void {
   const todayEpochDay = Math.floor((Date.parse(now) + UTC3_OFFSET_MS) / DAY_MS);
   const startEpochDay = Math.floor((startMs + UTC3_OFFSET_MS) / DAY_MS);
   const dayOffset = startEpochDay - todayEpochDay;
@@ -186,11 +185,7 @@ export function validateSlotIsBookable({
   }
 
   const endMs = startMs + durationMinutes * MINUTE_MS;
-  const busy = bookings.map(({ start, end }) => ({
-    start: Date.parse(start),
-    end: Date.parse(end),
-  }));
-  if (!isFree(busy, startMs, endMs)) {
+  if (!isFree(parseBookings(bookings), startMs, endMs)) {
     throw new ApiError(409, 'slot_taken', 'Это время уже занято. Выберите другой слот.');
   }
 }
