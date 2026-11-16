@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.2.1...v0.3.0) (2026-11-16)
+
+
+### Features
+
+* добавить render.yaml для Docker-сервиса на Render (тикет [#42](https://github.com/kitXIII/ai-for-developers-project-386/issues/42)) ([e58fed3](https://github.com/kitXIII/ai-for-developers-project-386/commit/e58fed38d237c9c44309145dedeffd0ecd943502))
+
 ## [0.2.1](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.2.0...v0.2.1) (2026-11-16)
 
 
