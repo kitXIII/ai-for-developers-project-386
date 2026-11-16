@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.2.0...v0.2.1) (2026-11-16)
+
+
+### Miscellaneous Chores
+
+* release 0.2.1 ([8a54460](https://github.com/kitXIII/ai-for-developers-project-386/commit/8a54460067420b61d589404fcdc42790f05e1a4b))
+
 ## [0.2.0](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.1.0...v0.2.0) (2026-11-16)
 
 ### Features
