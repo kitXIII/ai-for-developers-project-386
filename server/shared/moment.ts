@@ -1,9 +1,7 @@
-import type { Schedule } from '../models/schedule.js';
+import { DAY_MS, MINUTE_MS, shiftByOffset, type Schedule } from '../models/schedule.js';
 
 // The contract's moment form `YYYY-MM-DDTHH:mm:ss+03:00` built from epoch-ms
 // (ADR 0004): formatting is the adapter's concern, the domain never sees strings.
-const MINUTE_MS = 60_000;
-const DAY_MS = 24 * 60 * MINUTE_MS;
 
 // Epoch day number (days since 1970-01-01 in the shifted frame) → calendar date.
 // Howard Hinnant's civil_from_days algorithm.
@@ -35,8 +33,7 @@ function pad2(value: number): string {
 // truncated to `:00` (the contract's granularity), the offset comes from the
 // settings, never from the input moment.
 export function formatMoment(epochMs: number, schedule: Schedule): string {
-  const offsetMs = schedule.utcOffsetMinutes * MINUTE_MS;
-  const shifted = epochMs + offsetMs;
+  const shifted = shiftByOffset(epochMs, schedule);
   const epochDay = Math.floor(shifted / DAY_MS);
   const minuteOfDay = Math.floor((shifted - epochDay * DAY_MS) / MINUTE_MS);
   const { year, month, day } = civilFromDays(epochDay);

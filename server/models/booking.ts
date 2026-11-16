@@ -1,5 +1,6 @@
 import { DomainError } from './errors.js';
 import type { MeetingType } from './meeting-type.js';
+import { isShortText } from './text.js';
 
 // The booking entity (ADR 0004): everything is epoch-ms here, the repository
 // owns `id`, the contract moments are built by the adapter.
@@ -17,18 +18,10 @@ export type Booking = {
 // the model derives.
 export type BookingData = Omit<Booking, 'id'>;
 
-// A short text field: 1–100 characters, not all spaces, no edge spaces. The
-// contract model uses the same rule for the meeting type `name`; the copy is a
-// literal at the throw site until the schedule becomes configurable.
-const shortTextPattern = /^\S(?:.*\S)?$/;
-
+// The rule is shared with the meeting type `name`; the message names the field
+// and stays here.
 export function parseGuestName(value: unknown): string {
-  if (
-    typeof value !== 'string' ||
-    value.length < 1 ||
-    value.length > 100 ||
-    !shortTextPattern.test(value)
-  ) {
+  if (!isShortText(value)) {
     throw new DomainError(
       'invalid_value',
       'Имя обязательно: от 1 до 100 символов, без пробелов по краям.',

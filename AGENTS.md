@@ -44,8 +44,10 @@ Commitlint проверяет каждый коммит: заголовок — 
 - typecheck — это три отдельных tsc-прохода (root/client `Bundler`, `tsconfig.server.json` NodeNext,
   `tsconfig.test.json`). В server-коде NodeNext: относительные импорты соседних модулей пишутся
   с расширением .js (как в `server/index.ts`), хотя сами файлы — .ts.
-- Тесты используют `app.inject()` Fastify — без HTTP-сервера и Vite; стройте приложение через
-  `buildApp({ serveClient: false, logger: false })` (см. `test/api/contract.test.ts`).
+- HTTP-тесты (`test/api/contract.test.ts`, `test/server/app.test.ts`) используют `app.inject()`
+  Fastify — без HTTP-сервера и Vite; приложение в них строится через
+  `buildApp({ serveClient: false, logger: false })`. Юнит-тесты слоёв (`test/server/models`,
+  `services`, `repositories`, `shared`) приложение не строят — они вызывают модули напрямую.
 - `mise run check` включает `agent-config` (`agnix --strict .`) — валидирует этот файл: не ломайте
   структуру и ссылки в `AGENTS.md`/README.
 - Фиксеры (`oxfmt`, `oxlint`, `typos`) в pre-commit могут оставить правки в рабочем дереве, если

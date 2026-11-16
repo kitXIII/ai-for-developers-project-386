@@ -17,6 +17,16 @@ export const DEFAULT_SCHEDULE: Schedule = {
   windowDays: 14,
 };
 
+// The domain lives in epoch-ms: the same constants and one shift serve every
+// module that counts in the schedule's offset frame (models and adapters).
+export const MINUTE_MS = 60_000;
+export const DAY_MS = 24 * 60 * MINUTE_MS;
+
+// An instant moved into the schedule's fixed UTC-offset frame.
+export function shiftByOffset(ms: number, schedule: Schedule): number {
+  return ms + schedule.utcOffsetMinutes * MINUTE_MS;
+}
+
 // Configuration errors, not client input: `buildApp()` calls this before
 // registering routes, so a broken schedule fails the process with a plain
 // RangeError (ADR 0004).

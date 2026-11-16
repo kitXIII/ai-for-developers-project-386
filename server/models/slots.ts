@@ -1,11 +1,17 @@
+import type { Booking } from './booking.js';
 import { DomainError } from './errors.js';
-import type { Schedule } from './schedule.js';
+import { DAY_MS, MINUTE_MS, shiftByOffset, type Schedule } from './schedule.js';
 
 // The booking rule model (ADR 0002, ADR 0004): the same rules that produce the
 // slot list, checked against an epoch-ms instant. Time, duration, busy
 // intervals and the schedule arrive as arguments — nothing is read here.
-const MINUTE_MS = 60_000;
-const DAY_MS = 24 * 60 * MINUTE_MS;
+
+// One bookable interval in epoch-ms: the adapter formats it, the model never
+// builds strings (ADR 0004).
+export type Slot = {
+  startMs: number;
+  endMs: number;
+};
 
 // A busy interval of any meeting type: a slot must strictly not overlap any of
 // them (`t < конец брони && t + длительность > начало брони`).
@@ -14,11 +20,17 @@ export type BusyInterval = {
   endMs: number;
 };
 
-// One bookable interval and one day of the calendar, both in epoch-ms: the
-// adapter formats them, the model never builds strings (ADR 0004).
+// The busy set of a scenario: every stored booking as an interval, whatever its
+// type (a booking IS an interval, so no per-call mapping is left to services).
+export function busyIntervals(bookings: Booking[]): BusyInterval[] {
+  return bookings.map(({ startMs, endMs }) => ({ startMs, endMs }));
+}
+
+// One day of the calendar in epoch-ms: the local midnight of the day and the
+// free intervals in it; the adapter formats both (ADR 0004).
 export type SlotsDay = {
   dayStartMs: number;
-  slots: Array<{ startMs: number; endMs: number }>;
+  slots: Slot[];
 };
 
 type SlotCheck = {
@@ -39,7 +51,7 @@ type GenerateSlotsInput = {
 
 // Epoch day number in the schedule's offset frame.
 function localEpochDay(ms: number, schedule: Schedule): number {
-  return Math.floor((ms + schedule.utcOffsetMinutes * MINUTE_MS) / DAY_MS);
+  return Math.floor(shiftByOffset(ms, schedule) / DAY_MS);
 }
 
 // Monday-based weekday index (0 = Monday … 6 = Sunday); 1970-01-01 was Thursday.
@@ -72,12 +84,8 @@ function isGridStart(minute: number, durationMinutes: number, schedule: Schedule
 
 // The fixed grid of a day: the tail shorter than the duration is dropped, so
 // the grid is neither shifted nor extended to the end of the workday.
-function slotGrid(
-  dayStartMs: number,
-  durationMinutes: number,
-  schedule: Schedule,
-): SlotsDay['slots'] {
-  const slots: SlotsDay['slots'] = [];
+function slotGrid(dayStartMs: number, durationMinutes: number, schedule: Schedule): Slot[] {
+  const slots: Slot[] = [];
   for (
     let minute = schedule.workdayStartMinute;
     fitsWorkday(minute, durationMinutes, schedule);
@@ -123,7 +131,7 @@ export function assertSlotBookable({
     );
   }
 
-  const shifted = startMs + schedule.utcOffsetMinutes * MINUTE_MS;
+  const shifted = shiftByOffset(startMs, schedule);
   const minute = Math.floor(positiveModulo(shifted, DAY_MS) / MINUTE_MS);
   const alignsToMinute = positiveModulo(shifted, MINUTE_MS) === 0;
   if (!alignsToMinute || !isGridStart(minute, durationMinutes, schedule)) {

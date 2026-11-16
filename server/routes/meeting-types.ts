@@ -2,7 +2,7 @@ import type { GuestMeetingType, SlotsDay as SlotsDayResponse } from '@app/api/ty
 import type { FastifyInstance } from 'fastify';
 import type { MeetingType } from '../models/meeting-type.js';
 import type { Schedule } from '../models/schedule.js';
-import type { SlotsDay } from '../models/slots.js';
+import type { Slot, SlotsDay } from '../models/slots.js';
 import { formatMoment } from '../shared/moment.js';
 
 // ADR 0003: guest and owner views are separate contract models, so the guest
@@ -17,7 +17,7 @@ function toGuestView({ id, name, description, durationMinutes }: MeetingType): G
 function toContractSlots(days: SlotsDay[], schedule: Schedule): SlotsDayResponse[] {
   return days.map(({ dayStartMs, slots }) => ({
     date: formatMoment(dayStartMs, schedule).slice(0, 10),
-    slots: slots.map(({ startMs, endMs }) => ({
+    slots: slots.map(({ startMs, endMs }: Slot) => ({
       start: formatMoment(startMs, schedule),
       end: formatMoment(endMs, schedule),
     })),

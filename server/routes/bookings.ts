@@ -27,8 +27,9 @@ function parseStartMs(value: unknown): number {
 }
 
 // The contract shape is assembled here, in the only layer that knows the
-// `+03:00` moment format (ADR 0004).
-function toContractBooking(
+// `+03:00` moment format (ADR 0004). The admin route imports the same function:
+// two adapters of one entity do not duplicate the mapping.
+export function toContractBooking(
   { id, meetingTypeId, meetingTypeName, guestName, startMs, endMs }: Booking,
   schedule: Schedule,
 ): BookingResponse {

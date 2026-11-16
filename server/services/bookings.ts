@@ -1,6 +1,6 @@
 import { draftBooking, type Booking } from '../models/booking.js';
 import type { Schedule } from '../models/schedule.js';
-import { assertSlotBookable } from '../models/slots.js';
+import { assertSlotBookable, busyIntervals } from '../models/slots.js';
 import type { BookingRepository } from '../repositories/bookings.js';
 import type { MeetingTypeRepository } from '../repositories/meeting-types.js';
 import { getMeetingType } from './meeting-types.js';
@@ -38,10 +38,7 @@ export async function createBooking(
     nowMs: now(),
     durationMinutes: meetingType.durationMinutes,
     startMs: draft.startMs,
-    busy: (await bookings.list()).map(({ startMs: busyStartMs, endMs }) => ({
-      startMs: busyStartMs,
-      endMs,
-    })),
+    busy: busyIntervals(await bookings.list()),
     schedule,
   });
 

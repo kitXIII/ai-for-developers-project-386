@@ -1,4 +1,5 @@
 import { DomainError } from './errors.js';
+import { isShortText } from './text.js';
 
 // A meeting type entity and its value invariants (ADR 0004): the repository
 // owns `id`, the model owns the rest. Contract views are built by the adapter.
@@ -12,19 +13,9 @@ export type MeetingType = {
 // The write shape of the entity: everything the owner supplies.
 export type MeetingTypeData = Omit<MeetingType, 'id'>;
 
-// A short text field: 1–100 characters, not all spaces, no edge spaces. The
-// contract model uses the same rule for `name` and `guestName`.
-const shortTextPattern = /^\S(?:.*\S)?$/;
-
-// The message names the default schedule on purpose (ADR 0004): the copy is a
-// literal at the throw site until the schedule becomes configurable.
+// The rule lives in `text.ts`; the message names the field and stays here.
 function parseName(value: unknown): string {
-  if (
-    typeof value !== 'string' ||
-    value.length < 1 ||
-    value.length > 100 ||
-    !shortTextPattern.test(value)
-  ) {
+  if (!isShortText(value)) {
     throw new DomainError(
       'invalid_value',
       'Название обязательно: от 1 до 100 символов, без пробелов по краям.',

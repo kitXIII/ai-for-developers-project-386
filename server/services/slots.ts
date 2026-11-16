@@ -1,5 +1,5 @@
 import type { Schedule } from '../models/schedule.js';
-import { generateSlots, type SlotsDay } from '../models/slots.js';
+import { busyIntervals, generateSlots, type SlotsDay } from '../models/slots.js';
 import type { BookingRepository } from '../repositories/bookings.js';
 import type { MeetingTypeRepository } from '../repositories/meeting-types.js';
 import { getMeetingType } from './meeting-types.js';
@@ -19,7 +19,7 @@ export async function listSlots(
   meetingTypeId: string,
 ): Promise<SlotsDay[]> {
   const meetingType = await getMeetingType({ meetingTypes }, meetingTypeId);
-  const busy = (await bookings.list()).map(({ startMs, endMs }) => ({ startMs, endMs }));
+  const busy = busyIntervals(await bookings.list());
 
   return generateSlots({
     nowMs: now(),
