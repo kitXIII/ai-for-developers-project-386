@@ -8,5 +8,5 @@ services:
     branch: main
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    healthCheckPath: /
+    healthCheckPath: /admin
     autoDeployTrigger: checksPass
