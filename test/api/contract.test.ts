@@ -591,6 +591,83 @@ describe('API contract', () => {
     expect(response.json()).toMatchObject({ code: 'slot_taken' });
   });
 
+  it(`POST ${bookingsPath} → 409 slot_taken on a partial overlap with a longer booking`, async () => {
+    // A pristine app: the bookings made by the cases above must not hide the
+    // day's 09:00 start the assertions below lean on.
+    const overlapApp = await buildApp({ serveClient: false, logger: false });
+    try {
+      const shorter = await createMeetingType(overlapApp, validMeetingType);
+      const longer = await createMeetingType(overlapApp, {
+        ...validMeetingType,
+        name: 'Глубокое интервью',
+        durationMinutes: 100,
+      });
+      const date = (await freeSlotStartOnDay(overlapApp, shorter.id, 0)).slice(0, 10);
+
+      // 100 minutes on their own grid: 09:00–10:40. The end is off the
+      // 30-minute grid of the other type, so 10:30–11:00 only partially overlaps it.
+      await bookSlot(overlapApp, longer.id, `${date}T09:00:00+03:00`);
+
+      const response = await overlapApp.inject({
+        method: 'POST',
+        url: bookingsPath,
+        payload: bookingPayload(shorter.id, `${date}T10:30:00+03:00`),
+      });
+
+      expect(response.statusCode).toBe(409);
+      expectMatchesContract('POST', bookingsPath, 409, response.json());
+      expect(response.json()).toMatchObject({ code: 'slot_taken' });
+
+      // The slot list agrees with the create check: the partially covered start
+      // is gone, the touching one (11:00) stays.
+      const slotsResponse = await overlapApp.inject({
+        method: 'GET',
+        url: `${meetingTypesPath}/${shorter.id}/slots`,
+      });
+      const starts = (slotsResponse.json() as SlotsDays)
+        .find((day) => day.date === date)
+        ?.slots.map((slot) => slot.start.slice(11, 16));
+      expect(starts, 'the day keeps its other slots').toBeTruthy();
+      expect(starts).not.toContain('10:30');
+      expect(starts).toContain('11:00');
+    } finally {
+      await overlapApp.close();
+    }
+  });
+
+  it(`POST ${bookingsPath} → 409 slot_taken when a longer booking covers an existing one`, async () => {
+    const overlapApp = await buildApp({ serveClient: false, logger: false });
+    try {
+      const shorter = await createMeetingType(overlapApp, validMeetingType);
+      const longer = await createMeetingType(overlapApp, {
+        ...validMeetingType,
+        name: 'Глубокое интервью',
+        durationMinutes: 100,
+      });
+
+      const slotsResponse = await overlapApp.inject({
+        method: 'GET',
+        url: `${meetingTypesPath}/${shorter.id}/slots`,
+      });
+      const [first, second] = (slotsResponse.json() as SlotsDays)[0]?.slots ?? [];
+      expect(second, 'the day has at least two free slots').toBeTruthy();
+      await bookSlot(overlapApp, shorter.id, second.start); // 09:30–10:00
+
+      // 09:00–10:40 overlaps the existing booking on both sides.
+      const response = await overlapApp.inject({
+        method: 'POST',
+        url: bookingsPath,
+        payload: bookingPayload(longer.id, first.start),
+      });
+
+      expect(response.statusCode).toBe(409);
+      expectMatchesContract('POST', bookingsPath, 409, response.json());
+      expect(response.json()).toMatchObject({ code: 'slot_taken' });
+    } finally {
+      await overlapApp.close();
+    }
+  });
+
   it.each([
     ['имя отсутствует', { guestName: undefined }],
     ['имя пустое', { guestName: '' }],
