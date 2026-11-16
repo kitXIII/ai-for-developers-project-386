@@ -29,11 +29,12 @@ repositories, services» ([#18](https://github.com/kitXIII/ai-for-developers-pro
 ```
 server/
 ├── models/
-│   ├── schedule.ts        Schedule + DEFAULT_SCHEDULE, assertSchedule
+│   ├── schedule.ts        Schedule, DEFAULT_SCHEDULE, assertSchedule, MINUTE_MS/DAY_MS, сдвиг пояса
 │   ├── errors.ts          DomainError(kind), ни одного statusCode
+│   ├── text.ts            общий предикат короткого текста (1–100, без пробелов по краям)
 │   ├── meeting-type.ts    инварианты типа встречи, parseMeetingTypeData
-│   ├── booking.ts         инварианты имени, draftBooking, assertSlotBookable
-│   └── slots.ts           правила ADR 0002 в epoch-ms, schedule — параметр
+│   ├── booking.ts         инварианты имени, draftBooking
+│   └── slots.ts           правила ADR 0002 в epoch-ms, assertSlotBookable, busyIntervals
 ├── repositories/
 │   ├── meeting-types.ts   MeetingTypeRepository + inMemoryMeetingTypes()
 │   └── bookings.ts        BookingRepository + inMemoryBookings()
@@ -42,6 +43,7 @@ server/
 │   ├── bookings.ts        createBooking / listUpcomingBookings
 │   └── slots.ts           listSlots
 ├── routes/                HTTP-адаптер: конверт, +03:00, коды контракта
+│   ├── body.ts            конверт запроса: JSON-объект или 400
 │   ├── errors.ts          ApiError, errorMap, registerErrorHandler
 │   └── …                  по модулю на поддерево API
 ├── shared/
@@ -58,7 +60,9 @@ server/
   моментов; собирает ответы руками, без отдельного маппера.
 - `shared/` — общий для адаптеров код; сегодня это только `formatMoment`.
 - `app.ts` и `index.ts` — только wiring: создают адаптеры и часы, регистрируют обработчик
-  ошибок и роуты. Кодов, видов ошибок и статусов в `app.ts` нет.
+  ошибок и роуты. Кодов и видов доменных ошибок в `app.ts` нет; единственный живущий здесь
+  статус — `404` в `setNotFoundHandler` для неизвестных `/api` (резолюция #22): он отвечает
+  за SPA-fallback, а не за маппинг доменных ошибок.
 
 `server/errors.ts` и `server/validation.ts` исчезают: `ApiError` переезжает в
 `server/routes/errors.ts`, проверка JSON-конверта — в адаптер, инварианты значений — в
@@ -146,6 +150,8 @@ export class DomainError extends Error {
 - `ApiError` и `errorMap` живут только в `server/routes/errors.ts`; `ErrorCode` из
   `@app/api/types` импортирует на сервере только этот модуль. `Record<DomainErrorKind, …>`
   тотален: новый вид не скомпилируется без строки маппинга.
+- Единственный статус вне `routes/errors.ts` — `404` в `setNotFoundHandler` (`app.ts`): он
+  отделяет неизвестный `/api` от SPA-fallback (резолюция #22) и с `DomainErrorKind` не связан.
 - Адаптер проверяет конверт и свои контрактные поля: тело — JSON-объект, `meetingTypeId` —
   непустая строка, `start` — ISO-момент со смещением. Тип доменного поля — часть его
   инварианта: `parseMeetingTypeData` и `parseGuestName` одним предикатом проверяют и `typeof`,
@@ -191,8 +197,8 @@ export function assertSchedule(schedule: Schedule): void;
   (`generateSlots`/`assertSlotBookable`). Сервис получает `schedule` и `now: () => number` в
   зависимостях и вызывает `now()` один раз на сценарий, передавая в модель число. Классов и
   фабрик-замыканий нет — скрытое состояние ничего не инкапсулирует и ухудшает тесты.
-- Адаптер и `shared/formatMoment` получают `schedule.utcOffsetMinutes`, а не весь объект:
-  зависимость узкая.
+- `shared/formatMoment` получает `Schedule` целиком (тип из моделей — намеренная инверсия
+  `shared → models`), но читает только `utcOffsetMinutes`: остальные поля расписания ей не нужны.
 - Правилами остаются: сетка от `workdayStartMinute` с шагом, равным длительности; хвост дня
   отбрасывается; старт кратен минуте; окно — ровно D+1…D+N календарных дней по локальной дате
   `nowMs`, сегодня не бронируется; выходные Mon–Fri без слотов; непересечение строгое, стык в
@@ -224,7 +230,7 @@ components:
 | `server-repositories` | `api`, `server-models`                                     |
 | `server-models`       | `api`                                                      |
 | `server-shared`       | `api`, `server-models`                                     |
-| `tests`               | `server*`, `api`                                           |
+| `tests`               | `api`, `server` + явный перечень пяти слоёв                |
 
 - `components` в easement плоская: владельца файла выбирает `(priority, длина in-паттерна)`,
   иерархии нет. `priority: 1` и длина паттерна отдают вложенные файлы слоям без `except`;
@@ -233,8 +239,10 @@ components:
 - `server-shared → server-models` — намеренная инверсия: `formatMoment(ms, schedule)` берёт тип
   `Schedule` из моделей. `server-services` `server-shared` не получает: форматирование момента —
   забота адаптера.
-- `tests: auto` остаётся; глоб `may_depend_on: ['server*', api]` проверен и раскрывается во все
-  `server-*`. Колокация тестов рядом с кодом тоже попадает в `tests` (priority 1 000 000).
+- `tests: auto` остаётся, но `may_depend_on` перечисляет `api`, `server` и пять слоёв явно, без
+  глоба `server*`: глобы в списках компонентов появились только в easement 0.6.6, а версия
+  инструмента запинена в `mise.toml`, чтобы локальная и CI-сборка совпадали. Колокация тестов
+  рядом с кодом тоже попадает в `tests` (priority 1 000 000).
 
 Три «нет»:
 

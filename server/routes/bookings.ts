@@ -1,74 +1,70 @@
-import type { Booking, CreateBookingRequest } from '@app/api/types';
+import type { Booking as BookingResponse } from '@app/api/types';
 import type { FastifyInstance } from 'fastify';
-import { ApiError } from '../errors.js';
-import { formatUtc3Moment, validateSlotIsBookable } from '../slots.js';
-import type { RouteOptions } from '../storage.js';
-import { isRecord, validateShortText } from '../validation.js';
+import { parseGuestName, type Booking } from '../models/booking.js';
+import type { Schedule } from '../models/schedule.js';
+import type { CreateBookingInput } from '../services/bookings.js';
+import { formatMoment } from '../shared/moment.js';
+import { parseJsonObject } from './body.js';
+import { ApiError } from './errors.js';
 
-// Contract model `CreateBookingRequest`: `guestName` — 1–100 characters, no
-// edge spaces (same rules as the meeting type name); `start` — offsetDateTime.
+// The adapter checks its own contract fields (ADR 0004); everything else is a
+// scenario. `CreateBookingRequest.start` is an offsetDateTime.
 const momentWithOffset =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/;
 
-function validateCreateBookingRequest(body: unknown): CreateBookingRequest {
-  if (!isRecord(body)) {
-    throw new ApiError(400, 'validation_failed', 'Тело запроса должно быть JSON-объектом.');
-  }
+const invalidStartMessage =
+  'Время начала — ISO-момент со смещением, например 2026-12-01T10:00:00+03:00.';
 
-  const { meetingTypeId, start } = body;
-  if (typeof meetingTypeId !== 'string' || meetingTypeId.length === 0) {
-    throw new ApiError(400, 'validation_failed', 'Укажите тип встречи.');
+function parseStartMs(value: unknown): number {
+  if (typeof value !== 'string' || !momentWithOffset.test(value)) {
+    throw new ApiError(400, 'validation_failed', invalidStartMessage);
   }
-  if (
-    typeof start !== 'string' ||
-    !momentWithOffset.test(start) ||
-    Number.isNaN(Date.parse(start))
-  ) {
-    throw new ApiError(
-      400,
-      'validation_failed',
-      'Время начала — ISO-момент со смещением, например 2026-12-01T10:00:00+03:00.',
-    );
+  const startMs = Date.parse(value);
+  if (Number.isNaN(startMs)) {
+    throw new ApiError(400, 'validation_failed', invalidStartMessage);
   }
-  const guestName = validateShortText(
-    body.guestName,
-    'Имя обязательно: от 1 до 100 символов, без пробелов по краям.',
-  );
-  return { meetingTypeId, start, guestName };
+  return startMs;
 }
+
+// The contract shape is assembled here, in the only layer that knows the
+// `+03:00` moment format (ADR 0004). The admin route imports the same function:
+// two adapters of one entity do not duplicate the mapping.
+export function toContractBooking(
+  { id, meetingTypeId, meetingTypeName, guestName, startMs, endMs }: Booking,
+  schedule: Schedule,
+): BookingResponse {
+  return {
+    id,
+    meetingTypeId,
+    meetingTypeName,
+    guestName,
+    start: formatMoment(startMs, schedule),
+    end: formatMoment(endMs, schedule),
+  };
+}
+
+type BookingRoutesOptions = {
+  createBooking: (input: CreateBookingInput) => Promise<Booking>;
+  schedule: Schedule;
+};
 
 export async function bookingRoutes(
   app: FastifyInstance,
-  { storage, now }: RouteOptions,
+  { createBooking, schedule }: BookingRoutesOptions,
 ): Promise<void> {
   app.post('/api/v1/bookings', async (request, reply) => {
-    const { meetingTypeId, start, guestName } = validateCreateBookingRequest(request.body);
+    const body = parseJsonObject(request.body);
 
-    const meetingType = storage.meetingTypes.getByIdOrThrow(meetingTypeId);
+    // The fields are checked in the contract's frozen order — meetingTypeId →
+    // start → guestName — so a 400 on the name beats a 404 on an unknown type.
+    const { meetingTypeId } = body;
+    if (typeof meetingTypeId !== 'string' || meetingTypeId.length === 0) {
+      throw new ApiError(400, 'validation_failed', 'Укажите тип встречи.');
+    }
+    const startMs = parseStartMs(body.start);
+    const guestName = parseGuestName(body.guestName);
 
-    const startMs = Date.parse(start);
-    // The server computes `end` itself from the type duration (spec #10).
-    const endMs = startMs + meetingType.durationMinutes * 60_000;
-
-    // Checking and writing are one synchronous section without awaits: Node
-    // runs handlers on a single thread, so no second booking can slip in
-    // between the overlap check and the write (spec #10).
-    validateSlotIsBookable({
-      now: now(),
-      durationMinutes: meetingType.durationMinutes,
-      startMs,
-      bookings: storage.bookings.list(),
-    });
-    const booking: Booking = storage.bookings.create({
-      meetingTypeId: meetingType.id,
-      // Denormalized on purpose: types are never edited, so the name cannot
-      // go stale (spec #10).
-      meetingTypeName: meetingType.name,
-      guestName,
-      // Moments are answered in the +03:00 frame whatever the input offset was.
-      start: formatUtc3Moment(startMs),
-      end: formatUtc3Moment(endMs),
-    });
-    return reply.code(201).send(booking);
+    const booking = await createBooking({ meetingTypeId, startMs, guestName });
+    return reply.code(201).send(toContractBooking(booking, schedule));
   });
 }

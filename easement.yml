@@ -10,7 +10,28 @@ components:
     because: 'the React SPA — renders UI, reaches the backend only through @app/api'
   server:
     in: server
-    because: 'the Fastify app — serves the API and the SPA'
+    because: 'wiring only — buildApp() and the process entry: adapters, clocks, error handler, routes'
+  # Flat layers: `priority: 1` makes each one own its directory, while wiring keeps app.ts/index.ts.
+  server-routes:
+    in: server/routes
+    priority: 1
+    because: 'the HTTP adapter — envelope, +03:00 moments, contract codes; the only place that knows Fastify'
+  server-services:
+    in: server/services
+    priority: 1
+    because: 'use cases — orchestrate models and repository ports, know neither Fastify nor moment formatting'
+  server-repositories:
+    in: server/repositories
+    priority: 1
+    because: 'storage ports and their adapters — return model entities and call no use case'
+  server-models:
+    in: server/models
+    priority: 1
+    because: 'domain rules — schedule, slots, bookings, errors; read nothing themselves, every input arrives as an argument'
+  server-shared:
+    in: server/shared
+    priority: 1
+    because: 'code shared by the adapters — moment formatting, which takes the Schedule type from models'
 
 # The generated SDK is a target of imports, never checked as a source.
 target_only:
@@ -34,13 +55,64 @@ layers:
   # The contract sits below both.
   - api
 
+# Policy pins: `check` judges these without any code, so a later grant cannot undo a prohibition.
+examples:
+  - from: server/services/x.ts
+    to: server/routes/x.ts
+    expect: rejected
+    because: 'HTTP is the adapter concern; a use case never reaches the layer above it'
+  - from: server/models/x.ts
+    to: server/repositories/x.ts
+    expect: rejected
+    because: 'the domain reads no storage; entities arrive as arguments'
+  - from: server/routes/x.ts
+    to: server/repositories/x.ts
+    expect: rejected
+    because: 'the adapter calls use cases and never skips a layer'
+  - from: client/x.ts
+    to: server/models/x.ts
+    expect: rejected
+    because: 'the SPA reaches the backend only through @app/api'
+  - from: test/server/x.test.ts
+    to: server/services/x.ts
+    expect: allowed
+    because: 'tests may reach every server layer; this pin keeps the tests grant from narrowing'
+
 rules:
   client:
     may_depend_on: [api]
     because: 'the SPA talks to the API only through the generated SDK'
+  # Explicit five layers, not a `server-*` glob: a new layer needs a deliberate grant here.
   server:
+    may_depend_on:
+      [api, server-routes, server-services, server-repositories, server-models, server-shared]
+    because: 'wiring composes every layer; no layer may reach the wiring back'
+  server-routes:
+    may_depend_on: [api, server-services, server-models, server-shared]
+    because: 'the adapter calls use cases, reads model types and formats moments; it never touches repositories'
+  server-services:
+    may_depend_on: [api, server-repositories, server-models]
+    because: 'use cases orchestrate models and repository ports; they know nothing about Fastify'
+  server-repositories:
+    may_depend_on: [api, server-models]
+    because: 'adapters store and return model entities; a use case is never their collaborator'
+  server-models:
     may_depend_on: [api]
-    because: 'the server imports only contract types from @app/api'
+    because: 'domain rules know neither HTTP nor storage — only contract types'
+  server-shared:
+    may_depend_on: [api, server-models]
+    because: 'formatting takes the Schedule type from models; it is not part of the domain itself'
+  # Explicit components, not a glob: glob support arrived in easement 0.6.6, while
+  # the toolchain may still resolve 0.6.5 (CI did), which rejects `server*`.
   tests:
-    may_depend_on: [server, api]
-    because: 'tests build the real app and inject requests'
+    may_depend_on:
+      [
+        server,
+        server-routes,
+        server-services,
+        server-repositories,
+        server-models,
+        server-shared,
+        api,
+      ]
+    because: 'tests build the real app and inject requests, and unit-test every layer directly'
