@@ -1,6 +1,7 @@
 import { Anchor, Center, Loader, Stack, Text, Title } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { getAdminMeetingTypeOptions } from '@app/api/react-query';
+import { isMeetingTypeNotFound } from '../../lib/api-errors';
 import { Link, useParams } from 'react-router';
 
 export function MeetingTypeDetailPage() {
@@ -25,7 +26,7 @@ export function MeetingTypeDetailPage() {
   }
 
   if (isError) {
-    const notFound = 'code' in error && error.code === 'meeting_type_not_found';
+    const notFound = isMeetingTypeNotFound(error);
     return (
       <Stack gap="sm">
         <Text c="dimmed">

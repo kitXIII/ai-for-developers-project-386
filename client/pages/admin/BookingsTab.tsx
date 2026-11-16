@@ -1,16 +1,7 @@
 import { Alert, Center, Loader, Stack, Table, Text } from '@mantine/core';
-import type { Booking } from '@app/api/types';
 import { listBookingsOptions } from '@app/api/react-query';
 import { useQuery } from '@tanstack/react-query';
-import dayjs from 'dayjs';
-
-// Moments always carry the +03:00 offset (ADR 0002), so the wall-clock parts
-// are plain substrings — no timezone conversions in the UI. The column header
-// names the frame: «Когда (UTC+3)».
-function whenLabel({ start, end }: Booking): string {
-  const day = dayjs(start.slice(0, 10)).locale('ru').format('D MMMM');
-  return `${day}, ${start.slice(11, 16)}–${end.slice(11, 16)}`;
-}
+import { dayLabel, timeRangeLabel } from '../../lib/datetime';
 
 // The owner checks the upcoming bookings of every type (С3). The server answers
 // sorted by `start` asc, so the nearest booking is always the first row.
@@ -34,6 +25,7 @@ export function BookingsTab() {
         <Table horizontalSpacing="xs" verticalSpacing="sm">
           <Table.Thead>
             <Table.Tr>
+              {/* The column header names the frame: «Когда (UTC+3)». */}
               <Table.Th>Когда (UTC+3)</Table.Th>
               <Table.Th>Тип</Table.Th>
               <Table.Th>Гость</Table.Th>
@@ -42,7 +34,9 @@ export function BookingsTab() {
           <Table.Tbody>
             {bookings.map((booking) => (
               <Table.Tr key={booking.id}>
-                <Table.Td>{whenLabel(booking)}</Table.Td>
+                <Table.Td>
+                  {dayLabel(booking.start)}, {timeRangeLabel(booking.start, booking.end)}
+                </Table.Td>
                 {/* The type name is denormalized in the booking (spec #10) — no join. */}
                 <Table.Td>{booking.meetingTypeName}</Table.Td>
                 <Table.Td>{booking.guestName}</Table.Td>

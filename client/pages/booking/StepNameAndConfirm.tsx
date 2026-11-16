@@ -3,9 +3,9 @@ import type { Booking, ErrorCode, Slot } from '@app/api/types';
 import { createBookingMutation } from '@app/api/react-query';
 import { zCreateBookingRequest } from '@app/api/zod';
 import { useMutation } from '@tanstack/react-query';
-import dayjs from 'dayjs';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { dayLabel, timeRangeLabel } from '../../lib/datetime';
 
 type StepNameAndConfirmProps = {
   meetingTypeId: string;
@@ -83,10 +83,10 @@ export function StepNameAndConfirm({
     return <Text c="dimmed">Сначала выберите дату и время.</Text>;
   }
 
-  // Moments carry the +03:00 offset (ADR 0002), so the wall-clock parts are
-  // plain substrings — no timezone conversions in the UI.
-  const dayLabel = dayjs(selectedSlot.start.slice(0, 10)).locale('ru').format('D MMMM');
-  const timeLabel = `${selectedSlot.start.slice(11, 16)}–${selectedSlot.end.slice(11, 16)}`;
+  // Moments carry the +03:00 offset (ADR 0002) — the summary labels come from
+  // the shared substring helpers (client/lib/datetime.ts).
+  const slotDay = dayLabel(selectedSlot.start);
+  const slotTime = timeRangeLabel(selectedSlot.start, selectedSlot.end);
 
   return (
     <form onSubmit={handleSubmit}>
@@ -98,7 +98,7 @@ export function StepNameAndConfirm({
           </Button>
         )}
         <Text size="sm" c="dimmed">
-          {meetingTypeName}, {dayLabel}, {timeLabel} (UTC+3)
+          {meetingTypeName}, {slotDay}, {slotTime} (UTC+3)
         </Text>
         <TextInput
           label="Имя"

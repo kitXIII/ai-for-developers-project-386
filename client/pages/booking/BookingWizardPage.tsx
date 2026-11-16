@@ -2,9 +2,10 @@ import { Anchor, Badge, Button, Center, Group, Loader, Stack, Text, Title } from
 import type { Booking, Slot } from '@app/api/types';
 import { getMeetingTypeOptions } from '@app/api/react-query';
 import { useQuery } from '@tanstack/react-query';
-import dayjs from 'dayjs';
 import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
+import { isMeetingTypeNotFound } from '../../lib/api-errors';
+import { dayLabel, timeRangeLabel } from '../../lib/datetime';
 import { StepDateAndTime } from './StepDateAndTime';
 import { StepNameAndConfirm } from './StepNameAndConfirm';
 
@@ -70,7 +71,7 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
   }
 
   if (isError) {
-    const notFound = 'code' in error && error.code === 'meeting_type_not_found';
+    const notFound = isMeetingTypeNotFound(error);
     return (
       <Stack gap="sm">
         <Anchor component={Link} to="/booking">
@@ -91,12 +92,8 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
         <Title order={2}>Бронирование подтверждено</Title>
         <Stack gap="xs">
           <Text>Тип встречи: {createdBooking.meetingTypeName}</Text>
-          <Text>
-            День: {dayjs(createdBooking.start.slice(0, 10)).locale('ru').format('D MMMM')}
-          </Text>
-          <Text>
-            Время: {createdBooking.start.slice(11, 16)}–{createdBooking.end.slice(11, 16)} (UTC+3)
-          </Text>
+          <Text>День: {dayLabel(createdBooking.start)}</Text>
+          <Text>Время: {timeRangeLabel(createdBooking.start, createdBooking.end)} (UTC+3)</Text>
           <Text>Гость: {createdBooking.guestName}</Text>
         </Stack>
       </Stack>

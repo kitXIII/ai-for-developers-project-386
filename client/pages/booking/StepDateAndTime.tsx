@@ -3,8 +3,8 @@ import { listAvailableSlotsOptions } from '@app/api/react-query';
 import { Button, Center, Group, Loader, Stack, Text } from '@mantine/core';
 import { Calendar } from '@mantine/dates';
 import { useQuery } from '@tanstack/react-query';
-import dayjs from 'dayjs';
 import { useState } from 'react';
+import { dayLabel, timeRangeLabel } from '../../lib/datetime';
 
 type StepDateAndTimeProps = {
   meetingTypeId: string;
@@ -64,7 +64,7 @@ export function StepDateAndTime({
       {selectedDay && (
         <Stack gap="xs">
           <Text size="sm" c="dimmed">
-            Свободное время {dayjs(selectedDay).locale('ru').format('D MMMM')}:
+            Свободное время {dayLabel(selectedDay)}:
           </Text>
           <Group gap="xs">
             {daySlots.map((slot) => (
@@ -74,7 +74,7 @@ export function StepDateAndTime({
                 aria-pressed={slot.start === selectedSlot?.start}
                 onClick={() => onSelectSlot(slot)}
               >
-                {formatSlotLabel(slot)}
+                {timeRangeLabel(slot.start, slot.end)}
               </Button>
             ))}
           </Group>
@@ -82,10 +82,4 @@ export function StepDateAndTime({
       )}
     </Stack>
   );
-}
-
-// Moments always carry the +03:00 offset (ADR 0002), so the wall-clock time is
-// a plain substring — no timezone conversions in the UI.
-function formatSlotLabel({ start, end }: Slot): string {
-  return `${start.slice(11, 16)}–${end.slice(11, 16)}`;
 }
