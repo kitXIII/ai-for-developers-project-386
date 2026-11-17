@@ -180,7 +180,9 @@ Pre-commit проверяет staged-файлы, pre-push — весь прое�
 - **jactionlint** — линтер GitHub Actions и Dependabot: unpinned actions, отсутствие `permissions`, `concurrency` и `timeout-minutes`.
 - **typos** — ищет опечатки в коде, конфигах и документации.
 - **betterleaks** — сканер секретов: staged-файлы и рабочее дерево, а в недельном CI — всю историю коммитов.
-- **OSV-Scanner** — сверяет `pnpm-lock.yaml` с базой уязвимостей OSV и сообщает об известных уязвимостях в зависимостях.
+- **OSV-Scanner** — сверяет `pnpm-lock.yaml` с базой уязвимостей OSV и сообщает об известных уязвимостях
+  в зависимостях. Находки, для которых фикса ещё нет, разбираются через `osv-scanner.toml` (запись
+  `[[IgnoredVulns]]` с `reason` и `effectiveUntil`), а не удалением шага из гейта.
 - **agnix** — валидирует конфиги AI-агентов (`AGENTS.md` и подобные): битые ссылки, структуру и согласованность инструкций.
 
 ## Релизы
