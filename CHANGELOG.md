@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.3.0...v0.3.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* вернуть mise run check в зелёное (тикеты [#47](https://github.com/kitXIII/ai-for-developers-project-386/issues/47), [#48](https://github.com/kitXIII/ai-for-developers-project-386/issues/48)) ([#49](https://github.com/kitXIII/ai-for-developers-project-386/issues/49)) ([c19e8dd](https://github.com/kitXIII/ai-for-developers-project-386/commit/c19e8ddc8f9487fae8dd798c67a88482cb179c44))
+
 ## [0.3.0](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.2.1...v0.3.0) (2026-11-16)
 
 
