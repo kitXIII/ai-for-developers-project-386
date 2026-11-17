@@ -1,0 +1,10 @@
+# picomatch приходит только из тулинга сборки:
+# fdir <- tinyglobby <- vite / knip / postcss-mixins.
+# Ввод пользователя в API — JSON (имя гостя, id типа встречи), glob-шаблонов мы не парсим,
+# поэтому ReDoS недостижим.
+# Правило: как только в pnpm-lock.yaml появится picomatch > 4.0.7,
+# эту запись удаляют, а не продлевают effectiveUntil.
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+effectiveUntil = 2026-12-18
+reason = "ReDoS только через пользовательские glob-шаблоны; picomatch достижим исключительно из тулинга сборки"
