@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateBookingData, CreateBookingErrors, CreateBookingResponses, CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetAdminMeetingTypeData, GetAdminMeetingTypeErrors, GetAdminMeetingTypeResponses, GetMeetingTypeData, GetMeetingTypeErrors, GetMeetingTypeResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesResponses, ListAvailableSlotsData, ListAvailableSlotsErrors, ListAvailableSlotsResponses, ListBookingsData, ListBookingsResponses, ListMeetingTypesData, ListMeetingTypesResponses } from './types.gen';
+import type { CreateBookingData, CreateBookingErrors, CreateBookingResponses, CreateMeetingTypeData, CreateMeetingTypeErrors, CreateMeetingTypeResponses, GetAdminMeetingTypeData, GetAdminMeetingTypeErrors, GetAdminMeetingTypeResponses, GetMeetingTypeData, GetMeetingTypeErrors, GetMeetingTypeResponses, GetMessagesData, GetMessagesResponses, ListAdminMeetingTypesData, ListAdminMeetingTypesResponses, ListAvailableSlotsData, ListAvailableSlotsErrors, ListAvailableSlotsResponses, ListBookingsData, ListBookingsResponses, ListMeetingTypesData, ListMeetingTypesResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -47,3 +47,5 @@ export const listMeetingTypes = <ThrowOnError extends boolean = false>(options?:
 export const getMeetingType = <ThrowOnError extends boolean = false>(options: Options<GetMeetingTypeData, ThrowOnError>): RequestResult<GetMeetingTypeResponses, GetMeetingTypeErrors, ThrowOnError> => (options.client ?? client).get<GetMeetingTypeResponses, GetMeetingTypeErrors, ThrowOnError>({ url: '/api/v1/meeting-types/{id}', ...options });
 
 export const listAvailableSlots = <ThrowOnError extends boolean = false>(options: Options<ListAvailableSlotsData, ThrowOnError>): RequestResult<ListAvailableSlotsResponses, ListAvailableSlotsErrors, ThrowOnError> => (options.client ?? client).get<ListAvailableSlotsResponses, ListAvailableSlotsErrors, ThrowOnError>({ url: '/api/v1/meeting-types/{id}/slots', ...options });
+
+export const getMessages = <ThrowOnError extends boolean = false>(options?: Options<GetMessagesData, ThrowOnError>): RequestResult<GetMessagesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMessagesResponses, unknown, ThrowOnError>({ url: '/api/v1/messages', ...options });

@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createBooking, createMeetingType, getAdminMeetingType, getMeetingType, listAdminMeetingTypes, listAvailableSlots, listBookings, listMeetingTypes, type Options } from '../sdk.gen';
-import type { CreateBookingData, CreateBookingError, CreateBookingResponse, CreateMeetingTypeData, CreateMeetingTypeError, CreateMeetingTypeResponse, GetAdminMeetingTypeData, GetAdminMeetingTypeError, GetAdminMeetingTypeResponse, GetMeetingTypeData, GetMeetingTypeError, GetMeetingTypeResponse, ListAdminMeetingTypesData, ListAdminMeetingTypesResponse, ListAvailableSlotsData, ListAvailableSlotsError, ListAvailableSlotsResponse, ListBookingsData, ListBookingsResponse, ListMeetingTypesData, ListMeetingTypesResponse } from '../types.gen';
+import { createBooking, createMeetingType, getAdminMeetingType, getMeetingType, getMessages, listAdminMeetingTypes, listAvailableSlots, listBookings, listMeetingTypes, type Options } from '../sdk.gen';
+import type { CreateBookingData, CreateBookingError, CreateBookingResponse, CreateMeetingTypeData, CreateMeetingTypeError, CreateMeetingTypeResponse, GetAdminMeetingTypeData, GetAdminMeetingTypeError, GetAdminMeetingTypeResponse, GetMeetingTypeData, GetMeetingTypeError, GetMeetingTypeResponse, GetMessagesData, GetMessagesResponse, ListAdminMeetingTypesData, ListAdminMeetingTypesResponse, ListAvailableSlotsData, ListAvailableSlotsError, ListAvailableSlotsResponse, ListBookingsData, ListBookingsResponse, ListMeetingTypesData, ListMeetingTypesResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -155,4 +155,19 @@ export const listAvailableSlotsOptions = (options: Options<ListAvailableSlotsDat
         return data;
     },
     queryKey: listAvailableSlotsQueryKey(options)
+});
+
+export const getMessagesQueryKey = (options?: Options<GetMessagesData>) => createQueryKey('getMessages', options);
+
+export const getMessagesOptions = (options?: Options<GetMessagesData>) => queryOptions<GetMessagesResponse, DefaultError, GetMessagesResponse, ReturnType<typeof getMessagesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getMessages({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getMessagesQueryKey(options)
 });

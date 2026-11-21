@@ -135,6 +135,658 @@ export type GuestMeetingType = {
 };
 
 /**
+ * Каталог текстов целиком.
+ */
+export type Messages = {
+    /**
+     * Общие подписи, общие для всех разделов.
+     */
+    common: MessagesCommon;
+    /**
+     * Главная страница.
+     */
+    home: MessagesHome;
+    /**
+     * Гостевой сценарий: выбор типа, мастер записи, экран успеха.
+     */
+    booking: MessagesBooking;
+    /**
+     * Раздел владельца календаря.
+     */
+    admin: MessagesAdmin;
+    /**
+     * Тексты ошибок.
+     */
+    errors: MessagesErrors;
+};
+
+/**
+ * Раздел владельца календаря.
+ */
+export type MessagesAdmin = {
+    /**
+     * Заголовок раздела.
+     */
+    title: string;
+    /**
+     * Названия вкладок.
+     */
+    tabs: MessagesAdminTabs;
+    /**
+     * Вкладка типов встреч.
+     */
+    meetingTypes: MessagesAdminMeetingTypes;
+    /**
+     * Страница детализации типа встречи.
+     */
+    meetingTypeDetail: MessagesAdminMeetingTypeDetail;
+    /**
+     * Модальное окно создания типа встречи.
+     */
+    createModal: MessagesAdminCreateModal;
+    /**
+     * Вкладка бронирований.
+     */
+    bookings: MessagesAdminBookings;
+};
+
+/**
+ * Заголовки колонок таблицы бронирований.
+ */
+export type MessagesAdminBookingColumns = {
+    /**
+     * Колонка времени в рамке UTC+3.
+     */
+    when: string;
+    /**
+     * Колонка типа встречи.
+     */
+    type: string;
+    /**
+     * Колонка имени гостя.
+     */
+    guest: string;
+};
+
+/**
+ * Вкладка бронирований.
+ */
+export type MessagesAdminBookings = {
+    /**
+     * Подпись загрузки.
+     */
+    loading: string;
+    /**
+     * Не удалось загрузить бронирования.
+     */
+    loadFailed: string;
+    /**
+     * Пустой список.
+     */
+    empty: string;
+    /**
+     * Заголовки колонок таблицы.
+     */
+    columns: MessagesAdminBookingColumns;
+};
+
+/**
+ * Модальное окно создания типа встречи.
+ */
+export type MessagesAdminCreateModal = {
+    /**
+     * Заголовок окна.
+     */
+    title: string;
+    /**
+     * Подпись поля «Название».
+     */
+    nameLabel: string;
+    /**
+     * Плейсхолдер поля «Название».
+     */
+    namePlaceholder: string;
+    /**
+     * Подпись поля «Описание».
+     */
+    descriptionLabel: string;
+    /**
+     * Плейсхолдер поля «Описание».
+     */
+    descriptionPlaceholder: string;
+    /**
+     * Подпись поля «Длительность».
+     */
+    durationLabel: string;
+    /**
+     * Кнопка отмены.
+     */
+    cancel: string;
+    /**
+     * Кнопка создания.
+     */
+    submit: string;
+    /**
+     * Тип встречи не создан по технической причине.
+     */
+    failed: string;
+    /**
+     * Название не прошло проверку: «от {min} до {max} символов».
+     */
+    nameInvalid: string;
+    /**
+     * Описание не прошло проверку: «до {max} символов».
+     */
+    descriptionInvalid: string;
+    /**
+     * Длительность не прошла проверку: «от {min} до {max}».
+     */
+    durationInvalid: string;
+};
+
+/**
+ * Страница детализации типа встречи.
+ */
+export type MessagesAdminMeetingTypeDetail = {
+    /**
+     * Ссылка к списку типов.
+     */
+    back: string;
+    /**
+     * Подпись загрузки.
+     */
+    loading: string;
+    /**
+     * Не удалось загрузить тип встречи.
+     */
+    loadFailed: string;
+    /**
+     * Тип встречи не найден.
+     */
+    notFound: string;
+    /**
+     * Строка «Длительность: {minutes} мин».
+     */
+    duration: string;
+};
+
+/**
+ * Вкладка типов встреч.
+ */
+export type MessagesAdminMeetingTypes = {
+    /**
+     * Кнопка создания типа встречи.
+     */
+    create: string;
+    /**
+     * Подпись загрузки.
+     */
+    loading: string;
+    /**
+     * Не удалось загрузить список.
+     */
+    loadFailed: string;
+    /**
+     * Пустой список.
+     */
+    empty: string;
+    /**
+     * Строка «Длительность: {minutes} мин».
+     */
+    duration: string;
+};
+
+/**
+ * Названия вкладок раздела.
+ */
+export type MessagesAdminTabs = {
+    /**
+     * Вкладка «Типы встреч».
+     */
+    meetingTypes: string;
+    /**
+     * Вкладка «Бронирования».
+     */
+    bookings: string;
+};
+
+/**
+ * Гостевой сценарий.
+ */
+export type MessagesBooking = {
+    /**
+     * Список типов встреч.
+     */
+    list: MessagesBookingList;
+    /**
+     * Мастер записи.
+     */
+    wizard: MessagesBookingWizard;
+    /**
+     * Шаг «Дата и время».
+     */
+    dateTime: MessagesBookingDateTime;
+    /**
+     * Шаг «Имя и подтверждение».
+     */
+    confirm: MessagesBookingConfirm;
+    /**
+     * Экран подтверждённого бронирования.
+     */
+    success: MessagesBookingSuccess;
+};
+
+/**
+ * Шаг «Имя и подтверждение».
+ */
+export type MessagesBookingConfirm = {
+    /**
+     * Имя не заполнено.
+     */
+    noSlotSelected: string;
+    /**
+     * Подпись поля «Имя».
+     */
+    nameLabel: string;
+    /**
+     * Плейсхолдер поля «Имя».
+     */
+    namePlaceholder: string;
+    /**
+     * Имя не прошло проверку: «от {min} до {max} символов».
+     */
+    nameInvalid: string;
+    /**
+     * Сводка выбранного слота: «{meetingTypeName}, {day}, {time} (UTC+3)».
+     */
+    summary: string;
+    /**
+     * Кнопка подтверждения.
+     */
+    submit: string;
+    /**
+     * Кнопка возврата к выбору времени.
+     */
+    otherTime: string;
+    /**
+     * Бронирование не создано по технической причине.
+     */
+    createFailed: string;
+};
+
+/**
+ * Шаг «Дата и время».
+ */
+export type MessagesBookingDateTime = {
+    /**
+     * Подпись загрузки слотов.
+     */
+    loading: string;
+    /**
+     * Не удалось загрузить слоты.
+     */
+    loadFailed: string;
+    /**
+     * Заголовок свободного времени: «Свободное время {date}:».
+     */
+    freeTime: string;
+    /**
+     * Кнопка следующего месяца в календаре.
+     */
+    nextMonth: string;
+    /**
+     * Кнопка предыдущего месяца в календаре.
+     */
+    previousMonth: string;
+};
+
+/**
+ * Список типов встреч.
+ */
+export type MessagesBookingList = {
+    /**
+     * Заголовок страницы.
+     */
+    title: string;
+    /**
+     * Подпись загрузки.
+     */
+    loading: string;
+    /**
+     * Не удалось загрузить список.
+     */
+    loadFailed: string;
+    /**
+     * Пустой список.
+     */
+    empty: string;
+};
+
+/**
+ * Экран подтверждённого бронирования.
+ */
+export type MessagesBookingSuccess = {
+    /**
+     * Заголовок.
+     */
+    title: string;
+    /**
+     * Строка «Тип встречи: {name}».
+     */
+    meetingType: string;
+    /**
+     * Строка «День: {day}».
+     */
+    day: string;
+    /**
+     * Строка «Время: {time} (UTC+3)».
+     */
+    time: string;
+    /**
+     * Строка «Гость: {name}».
+     */
+    guest: string;
+};
+
+/**
+ * Мастер записи.
+ */
+export type MessagesBookingWizard = {
+    /**
+     * Индикатор шага: «Шаг {step} из {total}».
+     */
+    stepCounter: string;
+    /**
+     * Названия шагов.
+     */
+    steps: MessagesBookingWizardSteps;
+    /**
+     * Ссылка назад к списку типов.
+     */
+    backToList: string;
+    /**
+     * Подпись загрузки типа встречи.
+     */
+    loading: string;
+    /**
+     * Не удалось загрузить тип встречи.
+     */
+    loadFailed: string;
+    /**
+     * Тип встречи не найден.
+     */
+    notFound: string;
+};
+
+/**
+ * Названия шагов мастера.
+ */
+export type MessagesBookingWizardSteps = {
+    /**
+     * Шаг 1 — выбор типа.
+     */
+    type: string;
+    /**
+     * Шаг 2 — дата и время.
+     */
+    dateTime: string;
+    /**
+     * Шаг 3 — имя и подтверждение.
+     */
+    confirm: string;
+};
+
+/**
+ * Общие подписи.
+ */
+export type MessagesCommon = {
+    /**
+     * Название сервиса.
+     */
+    appName: string;
+    /**
+     * Навигация.
+     */
+    nav: MessagesCommonNav;
+    /**
+     * Общие действия.
+     */
+    actions: MessagesCommonActions;
+    /**
+     * Длительность в сокращённой форме: «{minutes} мин».
+     */
+    duration: string;
+    /**
+     * Подписи доступности.
+     */
+    aria: MessagesCommonAria;
+};
+
+/**
+ * Общие действия.
+ */
+export type MessagesCommonActions = {
+    /**
+     * Создать.
+     */
+    create: string;
+    /**
+     * Отмена.
+     */
+    cancel: string;
+    /**
+     * Назад.
+     */
+    back: string;
+    /**
+     * Продолжить.
+     */
+    next: string;
+    /**
+     * Подтвердить.
+     */
+    confirm: string;
+    /**
+     * Повторить неудавшуюся загрузку.
+     */
+    retry: string;
+};
+
+/**
+ * Подписи доступности.
+ */
+export type MessagesCommonAria = {
+    /**
+     * Кнопка меню на мобильном экране.
+     */
+    toggleMenu: string;
+};
+
+/**
+ * Навигация.
+ */
+export type MessagesCommonNav = {
+    /**
+     * Ссылка на главную.
+     */
+    home: string;
+    /**
+     * Ссылка в раздел администрирования.
+     */
+    admin: string;
+};
+
+/**
+ * Тексты ошибок.
+ */
+export type MessagesErrors = {
+    /**
+     * Фразы для кодов контракта: клиент показывает ошибку по `code`.
+     */
+    api: MessagesErrorsApi;
+    /**
+     * Непредвиденная ошибка на клиенте.
+     */
+    unexpected: string;
+    /**
+     * Тексты доменных ошибок: домен носит ключ, адаптер собирает строку.
+     */
+    domain: MessagesErrorsDomain;
+    /**
+     * Ошибки HTTP-конверта.
+     */
+    http: MessagesErrorsHttp;
+};
+
+/**
+ * Фразы для кодов контракта; по полю на каждый код из `ErrorCode`.
+ */
+export type MessagesErrorsApi = {
+    /**
+     * Код `validation_failed`.
+     */
+    validation_failed: string;
+    /**
+     * Код `meeting_type_not_found`.
+     */
+    meeting_type_not_found: string;
+    /**
+     * Код `slot_taken`.
+     */
+    slot_taken: string;
+    /**
+     * Код `outside_window`.
+     */
+    outside_window: string;
+    /**
+     * Код `outside_schedule`.
+     */
+    outside_schedule: string;
+};
+
+/**
+ * Тексты доменных ошибок.
+ */
+export type MessagesErrorsDomain = {
+    /**
+     * Ошибки типа встречи.
+     */
+    meetingType: MessagesErrorsDomainMeetingType;
+    /**
+     * Ошибки бронирования.
+     */
+    booking: MessagesErrorsDomainBooking;
+    /**
+     * Ошибки правил слотов.
+     */
+    slots: MessagesErrorsDomainSlots;
+};
+
+/**
+ * Ошибки бронирования.
+ */
+export type MessagesErrorsDomainBooking = {
+    /**
+     * Имя гостя не прошло проверку: «от {min} до {max} символов».
+     */
+    guestName: string;
+};
+
+/**
+ * Ошибки типа встречи.
+ */
+export type MessagesErrorsDomainMeetingType = {
+    /**
+     * Название не прошло проверку: «от {min} до {max} символов».
+     */
+    name: string;
+    /**
+     * Описание не прошло проверку: «до {max} символов».
+     */
+    description: string;
+    /**
+     * Длительность не прошла проверку: «от {min} до {max} минут».
+     */
+    duration: string;
+    /**
+     * Тип встречи не найден.
+     */
+    notFound: string;
+};
+
+/**
+ * Ошибки правил слотов.
+ */
+export type MessagesErrorsDomainSlots = {
+    /**
+     * Слот вне окна записи.
+     */
+    outsideWindow: string;
+    /**
+     * Слот в выходной день.
+     */
+    weekend: string;
+    /**
+     * Слот не по сетке стартов.
+     */
+    grid: string;
+    /**
+     * Слот выходит за конец рабочего дня.
+     */
+    workdayEnd: string;
+    /**
+     * Слот уже занят.
+     */
+    taken: string;
+};
+
+/**
+ * Ошибки HTTP-конверта.
+ */
+export type MessagesErrorsHttp = {
+    /**
+     * Тело запроса не JSON-объект.
+     */
+    bodyNotObject: string;
+    /**
+     * В запросе нет типа встречи.
+     */
+    meetingTypeIdRequired: string;
+    /**
+     * Время начала не в формате ISO-момента со смещением.
+     */
+    startFormat: string;
+};
+
+/**
+ * Главная страница.
+ */
+export type MessagesHome = {
+    /**
+     * Описание сервиса.
+     */
+    description: string;
+    /**
+     * Кнопка перехода к записи.
+     */
+    bookAction: string;
+};
+
+/**
+ * Ответ ручки каталога.
+ */
+export type MessagesPayload = {
+    /**
+     * Язык каталога; пока всегда `ru`.
+     */
+    locale: string;
+    /**
+     * Тексты интерфейса и ошибок.
+     */
+    messages: Messages;
+};
+
+/**
  * Доступный слот — свободный интервал, который можно забронировать.
  */
 export type Slot = {
@@ -348,3 +1000,19 @@ export type ListAvailableSlotsResponses = {
 };
 
 export type ListAvailableSlotsResponse = ListAvailableSlotsResponses[keyof ListAvailableSlotsResponses];
+
+export type GetMessagesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/v1/messages';
+};
+
+export type GetMessagesResponses = {
+    /**
+     * The request has succeeded.
+     */
+    200: MessagesPayload;
+};
+
+export type GetMessagesResponse = GetMessagesResponses[keyof GetMessagesResponses];

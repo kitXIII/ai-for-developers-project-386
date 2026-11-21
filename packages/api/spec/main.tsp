@@ -1,5 +1,6 @@
 import "@typespec/http";
 import "@typespec/openapi";
+import "./i18n.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.OpenAPI;
@@ -207,3 +208,9 @@ op listAdminMeetingTypes(): AdminMeetingType[];
 @tag("Admin")
 @route("admin/bookings")
 op listBookings(): Booking[];
+
+// --- Мета ---
+
+@tag("Meta")
+@route("messages")
+@get op getMessages(): MessagesPayload;

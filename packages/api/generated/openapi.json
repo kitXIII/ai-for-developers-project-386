@@ -10,6 +10,9 @@
     },
     {
       "name": "Admin"
+    },
+    {
+      "name": "Meta"
     }
   ],
   "paths": {
@@ -307,6 +310,27 @@
           "Guest"
         ]
       }
+    },
+    "/api/v1/messages": {
+      "get": {
+        "operationId": "getMessages",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The request has succeeded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessagesPayload"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Meta"
+        ]
+      }
     }
   },
   "components": {
@@ -494,6 +518,835 @@
           }
         },
         "description": "Тип встречи — представление гостя."
+      },
+      "Messages": {
+        "type": "object",
+        "required": [
+          "common",
+          "home",
+          "booking",
+          "admin",
+          "errors"
+        ],
+        "properties": {
+          "common": {
+            "$ref": "#/components/schemas/MessagesCommon",
+            "description": "Общие подписи, общие для всех разделов."
+          },
+          "home": {
+            "$ref": "#/components/schemas/MessagesHome",
+            "description": "Главная страница."
+          },
+          "booking": {
+            "$ref": "#/components/schemas/MessagesBooking",
+            "description": "Гостевой сценарий: выбор типа, мастер записи, экран успеха."
+          },
+          "admin": {
+            "$ref": "#/components/schemas/MessagesAdmin",
+            "description": "Раздел владельца календаря."
+          },
+          "errors": {
+            "$ref": "#/components/schemas/MessagesErrors",
+            "description": "Тексты ошибок."
+          }
+        },
+        "description": "Каталог текстов целиком."
+      },
+      "MessagesAdmin": {
+        "type": "object",
+        "required": [
+          "title",
+          "tabs",
+          "meetingTypes",
+          "meetingTypeDetail",
+          "createModal",
+          "bookings"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Заголовок раздела."
+          },
+          "tabs": {
+            "$ref": "#/components/schemas/MessagesAdminTabs",
+            "description": "Названия вкладок."
+          },
+          "meetingTypes": {
+            "$ref": "#/components/schemas/MessagesAdminMeetingTypes",
+            "description": "Вкладка типов встреч."
+          },
+          "meetingTypeDetail": {
+            "$ref": "#/components/schemas/MessagesAdminMeetingTypeDetail",
+            "description": "Страница детализации типа встречи."
+          },
+          "createModal": {
+            "$ref": "#/components/schemas/MessagesAdminCreateModal",
+            "description": "Модальное окно создания типа встречи."
+          },
+          "bookings": {
+            "$ref": "#/components/schemas/MessagesAdminBookings",
+            "description": "Вкладка бронирований."
+          }
+        },
+        "description": "Раздел владельца календаря."
+      },
+      "MessagesAdminBookingColumns": {
+        "type": "object",
+        "required": [
+          "when",
+          "type",
+          "guest"
+        ],
+        "properties": {
+          "when": {
+            "type": "string",
+            "description": "Колонка времени в рамке UTC+3."
+          },
+          "type": {
+            "type": "string",
+            "description": "Колонка типа встречи."
+          },
+          "guest": {
+            "type": "string",
+            "description": "Колонка имени гостя."
+          }
+        },
+        "description": "Заголовки колонок таблицы бронирований."
+      },
+      "MessagesAdminBookings": {
+        "type": "object",
+        "required": [
+          "loading",
+          "loadFailed",
+          "empty",
+          "columns"
+        ],
+        "properties": {
+          "loading": {
+            "type": "string",
+            "description": "Подпись загрузки."
+          },
+          "loadFailed": {
+            "type": "string",
+            "description": "Не удалось загрузить бронирования."
+          },
+          "empty": {
+            "type": "string",
+            "description": "Пустой список."
+          },
+          "columns": {
+            "$ref": "#/components/schemas/MessagesAdminBookingColumns",
+            "description": "Заголовки колонок таблицы."
+          }
+        },
+        "description": "Вкладка бронирований."
+      },
+      "MessagesAdminCreateModal": {
+        "type": "object",
+        "required": [
+          "title",
+          "nameLabel",
+          "namePlaceholder",
+          "descriptionLabel",
+          "descriptionPlaceholder",
+          "durationLabel",
+          "cancel",
+          "submit",
+          "failed",
+          "nameInvalid",
+          "descriptionInvalid",
+          "durationInvalid"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Заголовок окна."
+          },
+          "nameLabel": {
+            "type": "string",
+            "description": "Подпись поля «Название»."
+          },
+          "namePlaceholder": {
+            "type": "string",
+            "description": "Плейсхолдер поля «Название»."
+          },
+          "descriptionLabel": {
+            "type": "string",
+            "description": "Подпись поля «Описание»."
+          },
+          "descriptionPlaceholder": {
+            "type": "string",
+            "description": "Плейсхолдер поля «Описание»."
+          },
+          "durationLabel": {
+            "type": "string",
+            "description": "Подпись поля «Длительность»."
+          },
+          "cancel": {
+            "type": "string",
+            "description": "Кнопка отмены."
+          },
+          "submit": {
+            "type": "string",
+            "description": "Кнопка создания."
+          },
+          "failed": {
+            "type": "string",
+            "description": "Тип встречи не создан по технической причине."
+          },
+          "nameInvalid": {
+            "type": "string",
+            "description": "Название не прошло проверку: «от {min} до {max} символов»."
+          },
+          "descriptionInvalid": {
+            "type": "string",
+            "description": "Описание не прошло проверку: «до {max} символов»."
+          },
+          "durationInvalid": {
+            "type": "string",
+            "description": "Длительность не прошла проверку: «от {min} до {max}»."
+          }
+        },
+        "description": "Модальное окно создания типа встречи."
+      },
+      "MessagesAdminMeetingTypeDetail": {
+        "type": "object",
+        "required": [
+          "back",
+          "loading",
+          "loadFailed",
+          "notFound",
+          "duration"
+        ],
+        "properties": {
+          "back": {
+            "type": "string",
+            "description": "Ссылка к списку типов."
+          },
+          "loading": {
+            "type": "string",
+            "description": "Подпись загрузки."
+          },
+          "loadFailed": {
+            "type": "string",
+            "description": "Не удалось загрузить тип встречи."
+          },
+          "notFound": {
+            "type": "string",
+            "description": "Тип встречи не найден."
+          },
+          "duration": {
+            "type": "string",
+            "description": "Строка «Длительность: {minutes} мин»."
+          }
+        },
+        "description": "Страница детализации типа встречи."
+      },
+      "MessagesAdminMeetingTypes": {
+        "type": "object",
+        "required": [
+          "create",
+          "loading",
+          "loadFailed",
+          "empty",
+          "duration"
+        ],
+        "properties": {
+          "create": {
+            "type": "string",
+            "description": "Кнопка создания типа встречи."
+          },
+          "loading": {
+            "type": "string",
+            "description": "Подпись загрузки."
+          },
+          "loadFailed": {
+            "type": "string",
+            "description": "Не удалось загрузить список."
+          },
+          "empty": {
+            "type": "string",
+            "description": "Пустой список."
+          },
+          "duration": {
+            "type": "string",
+            "description": "Строка «Длительность: {minutes} мин»."
+          }
+        },
+        "description": "Вкладка типов встреч."
+      },
+      "MessagesAdminTabs": {
+        "type": "object",
+        "required": [
+          "meetingTypes",
+          "bookings"
+        ],
+        "properties": {
+          "meetingTypes": {
+            "type": "string",
+            "description": "Вкладка «Типы встреч»."
+          },
+          "bookings": {
+            "type": "string",
+            "description": "Вкладка «Бронирования»."
+          }
+        },
+        "description": "Названия вкладок раздела."
+      },
+      "MessagesBooking": {
+        "type": "object",
+        "required": [
+          "list",
+          "wizard",
+          "dateTime",
+          "confirm",
+          "success"
+        ],
+        "properties": {
+          "list": {
+            "$ref": "#/components/schemas/MessagesBookingList",
+            "description": "Список типов встреч."
+          },
+          "wizard": {
+            "$ref": "#/components/schemas/MessagesBookingWizard",
+            "description": "Мастер записи."
+          },
+          "dateTime": {
+            "$ref": "#/components/schemas/MessagesBookingDateTime",
+            "description": "Шаг «Дата и время»."
+          },
+          "confirm": {
+            "$ref": "#/components/schemas/MessagesBookingConfirm",
+            "description": "Шаг «Имя и подтверждение»."
+          },
+          "success": {
+            "$ref": "#/components/schemas/MessagesBookingSuccess",
+            "description": "Экран подтверждённого бронирования."
+          }
+        },
+        "description": "Гостевой сценарий."
+      },
+      "MessagesBookingConfirm": {
+        "type": "object",
+        "required": [
+          "noSlotSelected",
+          "nameLabel",
+          "namePlaceholder",
+          "nameInvalid",
+          "summary",
+          "submit",
+          "otherTime",
+          "createFailed"
+        ],
+        "properties": {
+          "noSlotSelected": {
+            "type": "string",
+            "description": "Имя не заполнено."
+          },
+          "nameLabel": {
+            "type": "string",
+            "description": "Подпись поля «Имя»."
+          },
+          "namePlaceholder": {
+            "type": "string",
+            "description": "Плейсхолдер поля «Имя»."
+          },
+          "nameInvalid": {
+            "type": "string",
+            "description": "Имя не прошло проверку: «от {min} до {max} символов»."
+          },
+          "summary": {
+            "type": "string",
+            "description": "Сводка выбранного слота: «{meetingTypeName}, {day}, {time} (UTC+3)»."
+          },
+          "submit": {
+            "type": "string",
+            "description": "Кнопка подтверждения."
+          },
+          "otherTime": {
+            "type": "string",
+            "description": "Кнопка возврата к выбору времени."
+          },
+          "createFailed": {
+            "type": "string",
+            "description": "Бронирование не создано по технической причине."
+          }
+        },
+        "description": "Шаг «Имя и подтверждение»."
+      },
+      "MessagesBookingDateTime": {
+        "type": "object",
+        "required": [
+          "loading",
+          "loadFailed",
+          "freeTime",
+          "nextMonth",
+          "previousMonth"
+        ],
+        "properties": {
+          "loading": {
+            "type": "string",
+            "description": "Подпись загрузки слотов."
+          },
+          "loadFailed": {
+            "type": "string",
+            "description": "Не удалось загрузить слоты."
+          },
+          "freeTime": {
+            "type": "string",
+            "description": "Заголовок свободного времени: «Свободное время {date}:»."
+          },
+          "nextMonth": {
+            "type": "string",
+            "description": "Кнопка следующего месяца в календаре."
+          },
+          "previousMonth": {
+            "type": "string",
+            "description": "Кнопка предыдущего месяца в календаре."
+          }
+        },
+        "description": "Шаг «Дата и время»."
+      },
+      "MessagesBookingList": {
+        "type": "object",
+        "required": [
+          "title",
+          "loading",
+          "loadFailed",
+          "empty"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Заголовок страницы."
+          },
+          "loading": {
+            "type": "string",
+            "description": "Подпись загрузки."
+          },
+          "loadFailed": {
+            "type": "string",
+            "description": "Не удалось загрузить список."
+          },
+          "empty": {
+            "type": "string",
+            "description": "Пустой список."
+          }
+        },
+        "description": "Список типов встреч."
+      },
+      "MessagesBookingSuccess": {
+        "type": "object",
+        "required": [
+          "title",
+          "meetingType",
+          "day",
+          "time",
+          "guest"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Заголовок."
+          },
+          "meetingType": {
+            "type": "string",
+            "description": "Строка «Тип встречи: {name}»."
+          },
+          "day": {
+            "type": "string",
+            "description": "Строка «День: {day}»."
+          },
+          "time": {
+            "type": "string",
+            "description": "Строка «Время: {time} (UTC+3)»."
+          },
+          "guest": {
+            "type": "string",
+            "description": "Строка «Гость: {name}»."
+          }
+        },
+        "description": "Экран подтверждённого бронирования."
+      },
+      "MessagesBookingWizard": {
+        "type": "object",
+        "required": [
+          "stepCounter",
+          "steps",
+          "backToList",
+          "loading",
+          "loadFailed",
+          "notFound"
+        ],
+        "properties": {
+          "stepCounter": {
+            "type": "string",
+            "description": "Индикатор шага: «Шаг {step} из {total}»."
+          },
+          "steps": {
+            "$ref": "#/components/schemas/MessagesBookingWizardSteps",
+            "description": "Названия шагов."
+          },
+          "backToList": {
+            "type": "string",
+            "description": "Ссылка назад к списку типов."
+          },
+          "loading": {
+            "type": "string",
+            "description": "Подпись загрузки типа встречи."
+          },
+          "loadFailed": {
+            "type": "string",
+            "description": "Не удалось загрузить тип встречи."
+          },
+          "notFound": {
+            "type": "string",
+            "description": "Тип встречи не найден."
+          }
+        },
+        "description": "Мастер записи."
+      },
+      "MessagesBookingWizardSteps": {
+        "type": "object",
+        "required": [
+          "type",
+          "dateTime",
+          "confirm"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Шаг 1 — выбор типа."
+          },
+          "dateTime": {
+            "type": "string",
+            "description": "Шаг 2 — дата и время."
+          },
+          "confirm": {
+            "type": "string",
+            "description": "Шаг 3 — имя и подтверждение."
+          }
+        },
+        "description": "Названия шагов мастера."
+      },
+      "MessagesCommon": {
+        "type": "object",
+        "required": [
+          "appName",
+          "nav",
+          "actions",
+          "duration",
+          "aria"
+        ],
+        "properties": {
+          "appName": {
+            "type": "string",
+            "description": "Название сервиса."
+          },
+          "nav": {
+            "$ref": "#/components/schemas/MessagesCommonNav",
+            "description": "Навигация."
+          },
+          "actions": {
+            "$ref": "#/components/schemas/MessagesCommonActions",
+            "description": "Общие действия."
+          },
+          "duration": {
+            "type": "string",
+            "description": "Длительность в сокращённой форме: «{minutes} мин»."
+          },
+          "aria": {
+            "$ref": "#/components/schemas/MessagesCommonAria",
+            "description": "Подписи доступности."
+          }
+        },
+        "description": "Общие подписи."
+      },
+      "MessagesCommonActions": {
+        "type": "object",
+        "required": [
+          "create",
+          "cancel",
+          "back",
+          "next",
+          "confirm",
+          "retry"
+        ],
+        "properties": {
+          "create": {
+            "type": "string",
+            "description": "Создать."
+          },
+          "cancel": {
+            "type": "string",
+            "description": "Отмена."
+          },
+          "back": {
+            "type": "string",
+            "description": "Назад."
+          },
+          "next": {
+            "type": "string",
+            "description": "Продолжить."
+          },
+          "confirm": {
+            "type": "string",
+            "description": "Подтвердить."
+          },
+          "retry": {
+            "type": "string",
+            "description": "Повторить неудавшуюся загрузку."
+          }
+        },
+        "description": "Общие действия."
+      },
+      "MessagesCommonAria": {
+        "type": "object",
+        "required": [
+          "toggleMenu"
+        ],
+        "properties": {
+          "toggleMenu": {
+            "type": "string",
+            "description": "Кнопка меню на мобильном экране."
+          }
+        },
+        "description": "Подписи доступности."
+      },
+      "MessagesCommonNav": {
+        "type": "object",
+        "required": [
+          "home",
+          "admin"
+        ],
+        "properties": {
+          "home": {
+            "type": "string",
+            "description": "Ссылка на главную."
+          },
+          "admin": {
+            "type": "string",
+            "description": "Ссылка в раздел администрирования."
+          }
+        },
+        "description": "Навигация."
+      },
+      "MessagesErrors": {
+        "type": "object",
+        "required": [
+          "api",
+          "unexpected",
+          "domain",
+          "http"
+        ],
+        "properties": {
+          "api": {
+            "$ref": "#/components/schemas/MessagesErrorsApi",
+            "description": "Фразы для кодов контракта: клиент показывает ошибку по `code`."
+          },
+          "unexpected": {
+            "type": "string",
+            "description": "Непредвиденная ошибка на клиенте."
+          },
+          "domain": {
+            "$ref": "#/components/schemas/MessagesErrorsDomain",
+            "description": "Тексты доменных ошибок: домен носит ключ, адаптер собирает строку."
+          },
+          "http": {
+            "$ref": "#/components/schemas/MessagesErrorsHttp",
+            "description": "Ошибки HTTP-конверта."
+          }
+        },
+        "description": "Тексты ошибок."
+      },
+      "MessagesErrorsApi": {
+        "type": "object",
+        "required": [
+          "validation_failed",
+          "meeting_type_not_found",
+          "slot_taken",
+          "outside_window",
+          "outside_schedule"
+        ],
+        "properties": {
+          "validation_failed": {
+            "type": "string",
+            "description": "Код `validation_failed`."
+          },
+          "meeting_type_not_found": {
+            "type": "string",
+            "description": "Код `meeting_type_not_found`."
+          },
+          "slot_taken": {
+            "type": "string",
+            "description": "Код `slot_taken`."
+          },
+          "outside_window": {
+            "type": "string",
+            "description": "Код `outside_window`."
+          },
+          "outside_schedule": {
+            "type": "string",
+            "description": "Код `outside_schedule`."
+          }
+        },
+        "description": "Фразы для кодов контракта; по полю на каждый код из `ErrorCode`."
+      },
+      "MessagesErrorsDomain": {
+        "type": "object",
+        "required": [
+          "meetingType",
+          "booking",
+          "slots"
+        ],
+        "properties": {
+          "meetingType": {
+            "$ref": "#/components/schemas/MessagesErrorsDomainMeetingType",
+            "description": "Ошибки типа встречи."
+          },
+          "booking": {
+            "$ref": "#/components/schemas/MessagesErrorsDomainBooking",
+            "description": "Ошибки бронирования."
+          },
+          "slots": {
+            "$ref": "#/components/schemas/MessagesErrorsDomainSlots",
+            "description": "Ошибки правил слотов."
+          }
+        },
+        "description": "Тексты доменных ошибок."
+      },
+      "MessagesErrorsDomainBooking": {
+        "type": "object",
+        "required": [
+          "guestName"
+        ],
+        "properties": {
+          "guestName": {
+            "type": "string",
+            "description": "Имя гостя не прошло проверку: «от {min} до {max} символов»."
+          }
+        },
+        "description": "Ошибки бронирования."
+      },
+      "MessagesErrorsDomainMeetingType": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "duration",
+          "notFound"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Название не прошло проверку: «от {min} до {max} символов»."
+          },
+          "description": {
+            "type": "string",
+            "description": "Описание не прошло проверку: «до {max} символов»."
+          },
+          "duration": {
+            "type": "string",
+            "description": "Длительность не прошла проверку: «от {min} до {max} минут»."
+          },
+          "notFound": {
+            "type": "string",
+            "description": "Тип встречи не найден."
+          }
+        },
+        "description": "Ошибки типа встречи."
+      },
+      "MessagesErrorsDomainSlots": {
+        "type": "object",
+        "required": [
+          "outsideWindow",
+          "weekend",
+          "grid",
+          "workdayEnd",
+          "taken"
+        ],
+        "properties": {
+          "outsideWindow": {
+            "type": "string",
+            "description": "Слот вне окна записи."
+          },
+          "weekend": {
+            "type": "string",
+            "description": "Слот в выходной день."
+          },
+          "grid": {
+            "type": "string",
+            "description": "Слот не по сетке стартов."
+          },
+          "workdayEnd": {
+            "type": "string",
+            "description": "Слот выходит за конец рабочего дня."
+          },
+          "taken": {
+            "type": "string",
+            "description": "Слот уже занят."
+          }
+        },
+        "description": "Ошибки правил слотов."
+      },
+      "MessagesErrorsHttp": {
+        "type": "object",
+        "required": [
+          "bodyNotObject",
+          "meetingTypeIdRequired",
+          "startFormat"
+        ],
+        "properties": {
+          "bodyNotObject": {
+            "type": "string",
+            "description": "Тело запроса не JSON-объект."
+          },
+          "meetingTypeIdRequired": {
+            "type": "string",
+            "description": "В запросе нет типа встречи."
+          },
+          "startFormat": {
+            "type": "string",
+            "description": "Время начала не в формате ISO-момента со смещением."
+          }
+        },
+        "description": "Ошибки HTTP-конверта."
+      },
+      "MessagesHome": {
+        "type": "object",
+        "required": [
+          "description",
+          "bookAction"
+        ],
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Описание сервиса."
+          },
+          "bookAction": {
+            "type": "string",
+            "description": "Кнопка перехода к записи."
+          }
+        },
+        "description": "Главная страница."
+      },
+      "MessagesPayload": {
+        "type": "object",
+        "required": [
+          "locale",
+          "messages"
+        ],
+        "properties": {
+          "locale": {
+            "type": "string",
+            "description": "Язык каталога; пока всегда `ru`."
+          },
+          "messages": {
+            "$ref": "#/components/schemas/Messages",
+            "description": "Тексты интерфейса и ошибок."
+          }
+        },
+        "description": "Ответ ручки каталога."
       },
       "Slot": {
         "type": "object",
