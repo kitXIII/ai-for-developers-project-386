@@ -44,13 +44,15 @@ export function toContractBooking(
 }
 
 type BookingRoutesOptions = {
-  createBooking: (input: CreateBookingInput) => Promise<Booking>;
+  bookings: {
+    create: (input: CreateBookingInput) => Promise<Booking>;
+  };
   schedule: Schedule;
 };
 
 export async function bookingRoutes(
   app: FastifyInstance,
-  { createBooking, schedule }: BookingRoutesOptions,
+  { bookings, schedule }: BookingRoutesOptions,
 ): Promise<void> {
   app.post('/api/v1/bookings', async (request, reply) => {
     const body = parseJsonObject(request.body);
@@ -64,7 +66,7 @@ export async function bookingRoutes(
     const startMs = parseStartMs(body.start);
     const guestName = parseGuestName(body.guestName);
 
-    const booking = await createBooking({ meetingTypeId, startMs, guestName });
+    const booking = await bookings.create({ meetingTypeId, startMs, guestName });
     return reply.code(201).send(toContractBooking(booking, schedule));
   });
 }

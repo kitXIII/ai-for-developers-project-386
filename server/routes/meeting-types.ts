@@ -24,30 +24,32 @@ function toContractSlots(days: SlotsDay[], schedule: Schedule): SlotsDayResponse
   }));
 }
 
-// Scenarios arrive bound to their dependencies from `buildApp()`: the adapter
-// never sees the repositories.
+// Scenarios arrive bound to their dependencies from the composition root: the
+// adapter never sees the repositories.
 type MeetingTypeRoutesOptions = {
-  listMeetingTypes: () => Promise<MeetingType[]>;
-  getMeetingType: (id: string) => Promise<MeetingType>;
-  listSlots: (id: string) => Promise<SlotsDay[]>;
+  meetingTypes: {
+    list: () => Promise<MeetingType[]>;
+    get: (id: string) => Promise<MeetingType>;
+    listSlots: (id: string) => Promise<SlotsDay[]>;
+  };
   schedule: Schedule;
 };
 
 export async function meetingTypeRoutes(
   app: FastifyInstance,
-  { listMeetingTypes, getMeetingType, listSlots, schedule }: MeetingTypeRoutesOptions,
+  { meetingTypes, schedule }: MeetingTypeRoutesOptions,
 ): Promise<void> {
-  app.get('/api/v1/meeting-types', async () => (await listMeetingTypes()).map(toGuestView));
+  app.get('/api/v1/meeting-types', async () => (await meetingTypes.list()).map(toGuestView));
 
   app.get('/api/v1/meeting-types/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
-    return reply.send(toGuestView(await getMeetingType(id)));
+    return reply.send(toGuestView(await meetingTypes.get(id)));
   });
 
   // The whole booking window comes back in one response; days without free
   // slots are omitted (the client disables them in the calendar).
   app.get('/api/v1/meeting-types/:id/slots', async (request, reply) => {
     const { id } = request.params as { id: string };
-    return reply.send(toContractSlots(await listSlots(id), schedule));
+    return reply.send(toContractSlots(await meetingTypes.listSlots(id), schedule));
   });
 }

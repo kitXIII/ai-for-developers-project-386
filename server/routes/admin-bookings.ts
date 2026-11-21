@@ -4,15 +4,17 @@ import type { Schedule } from '../models/schedule.js';
 import { toContractBooking } from './bookings.js';
 
 type AdminBookingRoutesOptions = {
-  listUpcomingBookings: () => Promise<Booking[]>;
+  bookings: {
+    listUpcoming: () => Promise<Booking[]>;
+  };
   schedule: Schedule;
 };
 
 export async function adminBookingRoutes(
   app: FastifyInstance,
-  { listUpcomingBookings, schedule }: AdminBookingRoutesOptions,
+  { bookings, schedule }: AdminBookingRoutesOptions,
 ): Promise<void> {
   app.get('/api/v1/admin/bookings', async () =>
-    (await listUpcomingBookings()).map((booking) => toContractBooking(booking, schedule)),
+    (await bookings.listUpcoming()).map((booking) => toContractBooking(booking, schedule)),
   );
 }
