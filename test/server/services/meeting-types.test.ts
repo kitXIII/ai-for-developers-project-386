@@ -18,6 +18,9 @@ describe('getMeetingType', () => {
 
     await expect(
       getMeetingType({ meetingTypes }, '00000000-0000-0000-0000-000000000000'),
-    ).rejects.toMatchObject({ kind: 'not_found' });
+    ).rejects.toMatchObject({
+      kind: 'not_found',
+      key: 'errors.domain.meetingType.notFound',
+    });
   });
 });

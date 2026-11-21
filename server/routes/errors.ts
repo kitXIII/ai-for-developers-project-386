@@ -1,6 +1,7 @@
 import type { ErrorCode } from '@app/api/types';
 import type { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { DomainError, type DomainErrorKind } from '../models/errors.js';
+import { t } from '../shared/i18n/index.js';
 
 // Unified API error: thrown by the adapter (JSON envelope and contract-field
 // checks), serialized as `{ code, message }` by the handler below.
@@ -14,8 +15,9 @@ export class ApiError extends Error {
   }
 }
 
-// The only place that knows HTTP statuses for domain errors (ADR 0004). The
-// `Record` is total: a new kind fails to compile until it gets a mapping.
+// The only place that knows HTTP statuses for domain errors (ADR 0004) and the
+// only one that turns a catalog key into text (ADR 0007). The `Record` is total:
+// a new kind fails to compile until it gets a mapping.
 const errorMap: Record<DomainErrorKind, { status: number; code: ErrorCode }> = {
   not_found: { status: 404, code: 'meeting_type_not_found' },
   invalid_value: { status: 400, code: 'validation_failed' },
@@ -33,7 +35,7 @@ export function registerErrorHandler(app: FastifyInstance): void {
     }
     if (error instanceof DomainError) {
       const { status, code } = errorMap[error.kind];
-      return reply.code(status).send({ code, message: error.message });
+      return reply.code(status).send({ code, message: t(error.key, error.params) });
     }
     if (error.statusCode === 400) {
       // Malformed JSON bodies and other parse failures keep the unified shape too.

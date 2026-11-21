@@ -9,8 +9,8 @@ import {
 import { FROZEN_NOW_MS, localDate, ms, TEST_SCHEDULE } from '../fixtures.js';
 
 // The booking rule model (ADR 0002, ADR 0004): the same rules that produce the
-// slot list, checked against an epoch-ms instant. Texts are not pinned, kinds
-// are — the adapter maps them to contract codes.
+// slot list, checked against an epoch-ms instant. Wording is not pinned, kinds
+// and keys are — the adapter maps kinds to codes and keys to phrases (ADR 0007).
 type CheckInput = {
   nowMs?: number;
   durationMinutes?: number;
@@ -37,6 +37,18 @@ function kindOf(run: () => void): string {
   } catch (error) {
     if (error instanceof DomainError) {
       return error.kind;
+    }
+    throw error;
+  }
+  throw new Error('Expected the model to throw a DomainError');
+}
+
+function keyOf(run: () => void): string {
+  try {
+    run();
+  } catch (error) {
+    if (error instanceof DomainError) {
+      return error.key;
     }
     throw error;
   }
@@ -138,6 +150,23 @@ describe('assertSlotBookable', () => {
     expect(kindOf(() => check({ startMs: startOf(1, '18:00:00'), busy: busyEverywhere }))).toBe(
       'outside_schedule',
     );
+  });
+
+  it('называет ключ каталога у каждой причины', () => {
+    const busy: BusyInterval[] = [
+      { startMs: startOf(1, '09:00:00'), endMs: startOf(1, '10:40:00') },
+    ];
+    const cases: [() => void, string][] = [
+      [() => check({ startMs: startOf(0, '10:00:00') }), 'errors.domain.slots.outsideWindow'],
+      [() => check({ startMs: startOf(5, '10:00:00') }), 'errors.domain.slots.weekend'],
+      [() => check({ startMs: startOf(1, '10:10:00') }), 'errors.domain.slots.grid'],
+      [() => check({ startMs: startOf(1, '18:00:00') }), 'errors.domain.slots.workdayEnd'],
+      [() => check({ startMs: startOf(1, '10:30:00'), busy }), 'errors.domain.slots.taken'],
+    ];
+
+    for (const [run, key] of cases) {
+      expect(keyOf(run)).toBe(key);
+    }
   });
 });
 

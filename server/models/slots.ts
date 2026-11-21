@@ -105,8 +105,8 @@ function isFree(busy: BusyInterval[], startMs: number, endMs: number): boolean {
 
 // Re-validates a requested start against the rules that produce the slot list
 // (ADR 0002) — a booking must not bypass them. The checks run in the frozen
-// order: window → weekday → grid → day end → overlap. Texts are literals at
-// the throw site and name the default schedule until it becomes configurable.
+// order: window → weekday → grid → day end → overlap. Keys are literals at the
+// throw site and name the default schedule until it becomes configurable.
 export function assertSlotBookable({
   nowMs,
   durationMinutes,
@@ -118,39 +118,27 @@ export function assertSlotBookable({
   const startEpochDay = localEpochDay(startMs, schedule);
   const dayOffset = startEpochDay - todayEpochDay;
   if (dayOffset < 1 || dayOffset > schedule.windowDays) {
-    throw new DomainError(
-      'outside_window',
-      'Слот вне окна записи: бронировать можно на 14 дней вперёд, начиная с завтрашнего дня.',
-    );
+    throw new DomainError('outside_window', 'errors.domain.slots.outsideWindow');
   }
 
   if (isWeekend(startEpochDay)) {
-    throw new DomainError(
-      'outside_schedule',
-      'Слот вне графика работы: брони доступны только в будние дни.',
-    );
+    throw new DomainError('outside_schedule', 'errors.domain.slots.weekend');
   }
 
   const shifted = shiftByOffset(startMs, schedule);
   const minute = Math.floor(positiveModulo(shifted, DAY_MS) / MINUTE_MS);
   const alignsToMinute = positiveModulo(shifted, MINUTE_MS) === 0;
   if (!alignsToMinute || !isGridStart(minute, durationMinutes, schedule)) {
-    throw new DomainError(
-      'outside_schedule',
-      'Слот вне сетки расписания: время начала кратно длительности типа от 09:00 (UTC+3).',
-    );
+    throw new DomainError('outside_schedule', 'errors.domain.slots.grid');
   }
 
   if (!fitsWorkday(minute, durationMinutes, schedule)) {
-    throw new DomainError(
-      'outside_schedule',
-      'Слот вне графика работы: рабочий день заканчивается в 18:00 (UTC+3).',
-    );
+    throw new DomainError('outside_schedule', 'errors.domain.slots.workdayEnd');
   }
 
   const endMs = startMs + durationMinutes * MINUTE_MS;
   if (!isFree(busy, startMs, endMs)) {
-    throw new DomainError('slot_taken', 'Это время уже занято. Выберите другой слот.');
+    throw new DomainError('slot_taken', 'errors.domain.slots.taken');
   }
 }
 

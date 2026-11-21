@@ -1,11 +1,10 @@
+import type { MessageParams } from '../../models/errors.js';
 import type { MessagePath } from '../../models/message-key.js';
 import { ru } from './ru.js';
 
 // The served catalog. One locale for now (ADR 0007): a second one turns this
 // module into a locale map, the contract stays the same.
 export const messages = ru;
-
-export type MessageParams = Record<string, string | number>;
 
 const placeholder = /\{(\w+)\}/g;
 

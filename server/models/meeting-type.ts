@@ -1,5 +1,5 @@
 import { DomainError } from './errors.js';
-import { isShortText } from './text.js';
+import { isShortText, SHORT_TEXT_MAX, SHORT_TEXT_MIN } from './text.js';
 
 // A meeting type entity and its value invariants (ADR 0004): the repository
 // owns `id`, the model owns the rest. Contract views are built by the adapter.
@@ -13,27 +13,42 @@ export type MeetingType = {
 // The write shape of the entity: everything the owner supplies.
 export type MeetingTypeData = Omit<MeetingType, 'id'>;
 
-// The rule lives in `text.ts`; the message names the field and stays here.
+const DESCRIPTION_MAX = 1000;
+const DURATION_MIN = 5;
+const DURATION_MAX = 540;
+
+// The rule lives in `text.ts`; the key names the field, the params quote the
+// limits the predicate enforces (ADR 0007).
 function parseName(value: unknown): string {
   if (!isShortText(value)) {
-    throw new DomainError(
-      'invalid_value',
-      'Название обязательно: от 1 до 100 символов, без пробелов по краям.',
-    );
+    throw new DomainError('invalid_value', 'errors.domain.meetingType.name', {
+      min: SHORT_TEXT_MIN,
+      max: SHORT_TEXT_MAX,
+    });
   }
   return value;
 }
 
 function parseDescription(value: unknown): string {
-  if (typeof value !== 'string' || value.length > 1000) {
-    throw new DomainError('invalid_value', 'Описание обязательно: до 1000 символов.');
+  if (typeof value !== 'string' || value.length > DESCRIPTION_MAX) {
+    throw new DomainError('invalid_value', 'errors.domain.meetingType.description', {
+      max: DESCRIPTION_MAX,
+    });
   }
   return value;
 }
 
 function parseDurationMinutes(value: unknown): number {
-  if (typeof value !== 'number' || !Number.isInteger(value) || value < 5 || value > 540) {
-    throw new DomainError('invalid_value', 'Длительность — целое число минут от 5 до 540.');
+  if (
+    typeof value !== 'number' ||
+    !Number.isInteger(value) ||
+    value < DURATION_MIN ||
+    value > DURATION_MAX
+  ) {
+    throw new DomainError('invalid_value', 'errors.domain.meetingType.duration', {
+      min: DURATION_MIN,
+      max: DURATION_MAX,
+    });
   }
   return value;
 }
