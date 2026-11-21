@@ -10,18 +10,21 @@ import { useT, type MessagePath } from '../../lib/i18n';
 import { StepDateAndTime } from './StepDateAndTime';
 import { StepNameAndConfirm } from './StepNameAndConfirm';
 
-type WizardStep = 1 | 2 | 3;
-
-const totalSteps = 3;
-
 // Steps of the guest booking wizard, in order; the indicator is plain text
 // («Шаг N из 3») — the Stepper component is deliberately not used. The catalog
-// keys are named by role, not by text.
-const stepTitleKeys: Record<WizardStep, MessagePath> = {
+// keys are named by role, not by text. The map is the only list of the steps:
+// the step type comes from its keys, the count from the last step (steps are
+// numbered from 1).
+const stepTitleKeys = {
   1: 'booking.wizard.steps.type',
   2: 'booking.wizard.steps.dateTime',
   3: 'booking.wizard.steps.confirm',
-};
+} as const satisfies Record<number, MessagePath>;
+
+type WizardStep = keyof typeof stepTitleKeys;
+
+const LAST_STEP: WizardStep = 3;
+const STEP_COUNT = LAST_STEP;
 
 type WizardLocationState = {
   fromList?: boolean;
@@ -115,7 +118,7 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
         {t('booking.wizard.backToList')}
       </Anchor>
       <Title order={1}>{meetingType.name}</Title>
-      <Text c="dimmed">{t('booking.wizard.stepCounter', { step, total: totalSteps })}</Text>
+      <Text c="dimmed">{t('booking.wizard.stepCounter', { step, total: STEP_COUNT })}</Text>
       <Title order={2}>{t(stepTitleKeys[step])}</Title>
       {step === 1 && (
         <Stack gap="xs">
@@ -134,7 +137,7 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
           onSelectSlot={setSelectedSlot}
         />
       )}
-      {step === 3 && (
+      {step === LAST_STEP && (
         <StepNameAndConfirm
           meetingTypeId={meetingTypeId}
           meetingTypeName={meetingType.name}
@@ -152,7 +155,7 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
             {t('common.actions.back')}
           </Button>
         )}
-        {step < 3 && (
+        {step < LAST_STEP && (
           <Button onClick={() => setStep((current) => (current + 1) as WizardStep)}>
             {t('common.actions.next')}
           </Button>

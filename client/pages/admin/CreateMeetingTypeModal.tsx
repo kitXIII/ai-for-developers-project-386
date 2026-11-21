@@ -15,7 +15,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { apiErrorKey } from '../../lib/api-errors';
-import { useT, type MessagePath, type Translate } from '../../lib/i18n';
+import { useT, type MessagePath } from '../../lib/i18n';
 import {
   DESCRIPTION_MAX,
   DURATION_MAX,
@@ -29,24 +29,29 @@ type CreateMeetingTypeModalProps = {
   onClose: () => void;
 };
 
-type FieldName = 'name' | 'description' | 'durationMinutes';
-
 // One catalog phrase per field: the contract Zod schema decides which fields
 // fail, the catalog decides how the failure is worded. The limits arrive as
-// `{min}`/`{max}` parameters, so the text cannot drift from the rule.
-function fieldError(t: Translate, field: FieldName): string {
-  switch (field) {
-    case 'name':
-      return t('admin.createModal.nameInvalid', { min: SHORT_TEXT_MIN, max: SHORT_TEXT_MAX });
-    case 'description':
-      return t('admin.createModal.descriptionInvalid', { max: DESCRIPTION_MAX });
-    case 'durationMinutes':
-      return t('admin.createModal.durationInvalid', { min: DURATION_MIN, max: DURATION_MAX });
-  }
-}
+// `{min}`/`{max}` parameters, so the text cannot drift from the rule. This map
+// is the only list of the form's fields — the type and the guard derive from it.
+const fieldPhrases = {
+  name: {
+    key: 'admin.createModal.nameInvalid',
+    params: { min: SHORT_TEXT_MIN, max: SHORT_TEXT_MAX },
+  },
+  description: {
+    key: 'admin.createModal.descriptionInvalid',
+    params: { max: DESCRIPTION_MAX },
+  },
+  durationMinutes: {
+    key: 'admin.createModal.durationInvalid',
+    params: { min: DURATION_MIN, max: DURATION_MAX },
+  },
+} as const satisfies Record<string, { key: MessagePath; params: Record<string, number> }>;
+
+type FieldName = keyof typeof fieldPhrases;
 
 function isFieldName(value: PropertyKey): value is FieldName {
-  return value === 'name' || value === 'description' || value === 'durationMinutes';
+  return Object.hasOwn(fieldPhrases, value);
 }
 
 function collectInvalidFields(issues: { path: PropertyKey[] }[]): FieldName[] {
@@ -89,12 +94,19 @@ function CreateMeetingTypeForm({ onClose }: { onClose: () => void }) {
       navigate(`/admin/meeting-types/${created.id}`);
     },
     onError: (error) => {
-      setApiMessageKey(apiErrorKey(error));
+      // A failure without a contract code keeps the wording this modal showed
+      // before the catalog existed.
+      setApiMessageKey(apiErrorKey(error, 'admin.createModal.failed'));
     },
   });
 
-  const fieldErrorText = (field: FieldName): string | undefined =>
-    invalidFields.includes(field) ? fieldError(t, field) : undefined;
+  const fieldErrorText = (field: FieldName): string | undefined => {
+    if (!invalidFields.includes(field)) {
+      return undefined;
+    }
+    const { key, params } = fieldPhrases[field];
+    return t(key, params);
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

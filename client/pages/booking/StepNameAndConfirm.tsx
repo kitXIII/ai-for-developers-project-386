@@ -31,17 +31,23 @@ export function StepNameAndConfirm({
   const t = useT();
   const [guestName, setGuestName] = useState('');
   const [fieldErrorKey, setFieldErrorKey] = useState<MessagePath | null>(null);
-  const [apiMessageKey, setApiMessageKey] = useState<MessagePath | null>(null);
-  const [apiCode, setApiCode] = useState<ErrorCode | null>(null);
+  // The contract code and the phrase shown for the failure always change
+  // together: one state keeps them from drifting apart.
+  const [apiFailure, setApiFailure] = useState<{ code: ErrorCode | null; key: MessagePath } | null>(
+    null,
+  );
 
   const createBooking = useMutation({
     ...createBookingMutation(),
     onSuccess: (booking) => onBooked(booking),
     onError: (error) => {
       // Contract errors carry the machine-readable code; the catalog turns the
-      // code into a phrase, anything else falls back to `errors.unexpected`.
-      setApiCode(errorCodeOf(error));
-      setApiMessageKey(apiErrorKey(error));
+      // code into a phrase. A failure without a code keeps the wording this
+      // screen showed before the catalog existed.
+      setApiFailure({
+        code: errorCodeOf(error),
+        key: apiErrorKey(error, 'booking.confirm.createFailed'),
+      });
     },
   });
 
@@ -60,8 +66,7 @@ export function StepNameAndConfirm({
       return;
     }
     setFieldErrorKey(null);
-    setApiCode(null);
-    setApiMessageKey(null);
+    setApiFailure(null);
     createBooking.mutate({ body: parsed.data });
   };
 
@@ -77,8 +82,8 @@ export function StepNameAndConfirm({
   return (
     <form onSubmit={handleSubmit}>
       <Stack gap="sm" w="fit-content" maw="100%">
-        {apiMessageKey && <Alert color="red">{t(apiMessageKey)}</Alert>}
-        {apiCode && isConflictCode(apiCode) && (
+        {apiFailure && <Alert color="red">{t(apiFailure.key)}</Alert>}
+        {apiFailure?.code && isConflictCode(apiFailure.code) && (
           <Button variant="default" w="fit-content" onClick={onBackToDateTime}>
             {t('booking.confirm.otherTime')}
           </Button>

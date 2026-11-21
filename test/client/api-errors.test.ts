@@ -33,6 +33,36 @@ describe('apiErrorKey', () => {
     expect(apiErrorKey({ code: 'not_a_contract_code' })).toBe('errors.unexpected');
     expect(apiErrorKey({ code: 42 })).toBe('errors.unexpected');
   });
+
+  // A failure without a contract code has no meaning the catalog could name, so
+  // each screen passes the phrase it showed before the catalog existed.
+  it('сбой без кода контракта отдаёт фолбэк экрана', () => {
+    expect(apiErrorKey(new Error('network'), 'booking.confirm.createFailed')).toBe(
+      'booking.confirm.createFailed',
+    );
+    expect(apiErrorKey({ message: 'offline' }, 'admin.createModal.failed')).toBe(
+      'admin.createModal.failed',
+    );
+  });
+
+  it('код контракта сильнее фолбэка экрана', () => {
+    expect(apiErrorKey({ code: 'validation_failed' }, 'booking.confirm.createFailed')).toBe(
+      'errors.api.validation_failed',
+    );
+    expect(apiErrorKey({ code: 'slot_taken' }, 'admin.createModal.failed')).toBe(
+      'errors.api.slot_taken',
+    );
+  });
+
+  // A code outside `ErrorCode` is a broken contract envelope, not a plain
+  // failure: it must stay visible as unexpected instead of hiding under the
+  // screen's fallback.
+  it('неконтрактный код не прячется за фолбэком экрана', () => {
+    expect(apiErrorKey({ code: 'not_a_contract_code' }, 'booking.confirm.createFailed')).toBe(
+      'errors.unexpected',
+    );
+    expect(apiErrorKey({ code: 42 }, 'admin.createModal.failed')).toBe('errors.unexpected');
+  });
 });
 
 describe('errorCodeOf', () => {

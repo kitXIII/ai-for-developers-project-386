@@ -1,24 +1,41 @@
 import type { ErrorCode } from '@app/api/types';
 import { zErrorCode } from '@app/api/zod';
+// The `./message-path.js` extension is required: the test tsconfig compiles
+// this client module under NodeNext (client code is bundled and normally
+// imports without an extension).
 import type { MessagePath } from './message-path.js';
+
+type ErrorEnvelope = { code?: unknown };
+
+function codeOf(error: unknown): unknown {
+  if (typeof error !== 'object' || error === null || !('code' in error)) {
+    return undefined;
+  }
+  return (error as ErrorEnvelope).code;
+}
 
 // React Query rejects with the contract envelope `{ code, message }` (the SDK
 // throws the parsed body). The code decides the meaning and the catalog decides
 // the text: the SPA shows `t(apiErrorKey(error))` and never the server wording.
 export function errorCodeOf(error: unknown): ErrorCode | null {
-  if (typeof error !== 'object' || error === null || !('code' in error)) {
-    return null;
-  }
-  const parsed = zErrorCode.safeParse(error.code);
+  const parsed = zErrorCode.safeParse(codeOf(error));
   return parsed.success ? parsed.data : null;
 }
 
 // Every contract code has an `errors.api` phrase — `errors.api.${ErrorCode}` is
 // a subset of `MessagePath`, so a drift between contract and catalog fails tsc.
-// Anything without a contract code is unexpected.
-export function apiErrorKey(error: unknown): MessagePath {
+// A failure without any code says nothing, so the screen passes the phrase it
+// wants to show; a code present but outside the contract is a broken envelope
+// and stays `errors.unexpected` instead of hiding behind that phrase.
+export function apiErrorKey(
+  error: unknown,
+  fallback: MessagePath = 'errors.unexpected',
+): MessagePath {
   const code = errorCodeOf(error);
-  return code ? `errors.api.${code}` : 'errors.unexpected';
+  if (code) {
+    return `errors.api.${code}`;
+  }
+  return codeOf(error) === undefined ? fallback : 'errors.unexpected';
 }
 
 // A missing meeting type is the final 404 (the queries set `retry: false`).
