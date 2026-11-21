@@ -72,6 +72,295 @@ export const zGuestMeetingType = z.object({
 });
 
 /**
+ * Заголовки колонок таблицы бронирований.
+ */
+export const zMessagesAdminBookingColumns = z.object({
+    when: z.string(),
+    type: z.string(),
+    guest: z.string()
+});
+
+/**
+ * Вкладка бронирований.
+ */
+export const zMessagesAdminBookings = z.object({
+    loading: z.string(),
+    loadFailed: z.string(),
+    empty: z.string(),
+    columns: zMessagesAdminBookingColumns
+});
+
+/**
+ * Модальное окно создания типа встречи.
+ */
+export const zMessagesAdminCreateModal = z.object({
+    title: z.string(),
+    nameLabel: z.string(),
+    namePlaceholder: z.string(),
+    descriptionLabel: z.string(),
+    descriptionPlaceholder: z.string(),
+    durationLabel: z.string(),
+    cancel: z.string(),
+    submit: z.string(),
+    failed: z.string(),
+    nameInvalid: z.string(),
+    descriptionInvalid: z.string(),
+    durationInvalid: z.string()
+});
+
+/**
+ * Страница детализации типа встречи.
+ */
+export const zMessagesAdminMeetingTypeDetail = z.object({
+    back: z.string(),
+    loading: z.string(),
+    loadFailed: z.string(),
+    notFound: z.string(),
+    duration: z.string()
+});
+
+/**
+ * Вкладка типов встреч.
+ */
+export const zMessagesAdminMeetingTypes = z.object({
+    create: z.string(),
+    loading: z.string(),
+    loadFailed: z.string(),
+    empty: z.string(),
+    duration: z.string()
+});
+
+/**
+ * Названия вкладок раздела.
+ */
+export const zMessagesAdminTabs = z.object({
+    meetingTypes: z.string(),
+    bookings: z.string()
+});
+
+/**
+ * Раздел владельца календаря.
+ */
+export const zMessagesAdmin = z.object({
+    title: z.string(),
+    tabs: zMessagesAdminTabs,
+    meetingTypes: zMessagesAdminMeetingTypes,
+    meetingTypeDetail: zMessagesAdminMeetingTypeDetail,
+    createModal: zMessagesAdminCreateModal,
+    bookings: zMessagesAdminBookings
+});
+
+/**
+ * Шаг «Имя и подтверждение».
+ */
+export const zMessagesBookingConfirm = z.object({
+    noSlotSelected: z.string(),
+    nameLabel: z.string(),
+    namePlaceholder: z.string(),
+    nameInvalid: z.string(),
+    summary: z.string(),
+    submit: z.string(),
+    otherTime: z.string(),
+    createFailed: z.string()
+});
+
+/**
+ * Шаг «Дата и время».
+ */
+export const zMessagesBookingDateTime = z.object({
+    loading: z.string(),
+    loadFailed: z.string(),
+    freeTime: z.string(),
+    nextMonth: z.string(),
+    previousMonth: z.string()
+});
+
+/**
+ * Список типов встреч.
+ */
+export const zMessagesBookingList = z.object({
+    title: z.string(),
+    loading: z.string(),
+    loadFailed: z.string(),
+    empty: z.string()
+});
+
+/**
+ * Экран подтверждённого бронирования.
+ */
+export const zMessagesBookingSuccess = z.object({
+    title: z.string(),
+    meetingType: z.string(),
+    day: z.string(),
+    time: z.string(),
+    guest: z.string()
+});
+
+/**
+ * Названия шагов мастера.
+ */
+export const zMessagesBookingWizardSteps = z.object({
+    type: z.string(),
+    dateTime: z.string(),
+    confirm: z.string()
+});
+
+/**
+ * Мастер записи.
+ */
+export const zMessagesBookingWizard = z.object({
+    stepCounter: z.string(),
+    steps: zMessagesBookingWizardSteps,
+    backToList: z.string(),
+    loading: z.string(),
+    loadFailed: z.string(),
+    notFound: z.string()
+});
+
+/**
+ * Гостевой сценарий.
+ */
+export const zMessagesBooking = z.object({
+    list: zMessagesBookingList,
+    wizard: zMessagesBookingWizard,
+    dateTime: zMessagesBookingDateTime,
+    confirm: zMessagesBookingConfirm,
+    success: zMessagesBookingSuccess
+});
+
+/**
+ * Общие действия.
+ */
+export const zMessagesCommonActions = z.object({
+    create: z.string(),
+    cancel: z.string(),
+    back: z.string(),
+    next: z.string(),
+    confirm: z.string(),
+    retry: z.string()
+});
+
+/**
+ * Подписи доступности.
+ */
+export const zMessagesCommonAria = z.object({
+    toggleMenu: z.string()
+});
+
+/**
+ * Навигация.
+ */
+export const zMessagesCommonNav = z.object({
+    home: z.string(),
+    admin: z.string()
+});
+
+/**
+ * Общие подписи.
+ */
+export const zMessagesCommon = z.object({
+    appName: z.string(),
+    nav: zMessagesCommonNav,
+    actions: zMessagesCommonActions,
+    duration: z.string(),
+    aria: zMessagesCommonAria
+});
+
+/**
+ * Фразы для кодов контракта; по полю на каждый код из `ErrorCode`.
+ */
+export const zMessagesErrorsApi = z.object({
+    validation_failed: z.string(),
+    meeting_type_not_found: z.string(),
+    slot_taken: z.string(),
+    outside_window: z.string(),
+    outside_schedule: z.string()
+});
+
+/**
+ * Ошибки бронирования.
+ */
+export const zMessagesErrorsDomainBooking = z.object({
+    guestName: z.string()
+});
+
+/**
+ * Ошибки типа встречи.
+ */
+export const zMessagesErrorsDomainMeetingType = z.object({
+    name: z.string(),
+    description: z.string(),
+    duration: z.string(),
+    notFound: z.string()
+});
+
+/**
+ * Ошибки правил слотов.
+ */
+export const zMessagesErrorsDomainSlots = z.object({
+    outsideWindow: z.string(),
+    weekend: z.string(),
+    grid: z.string(),
+    workdayEnd: z.string(),
+    taken: z.string()
+});
+
+/**
+ * Тексты доменных ошибок.
+ */
+export const zMessagesErrorsDomain = z.object({
+    meetingType: zMessagesErrorsDomainMeetingType,
+    booking: zMessagesErrorsDomainBooking,
+    slots: zMessagesErrorsDomainSlots
+});
+
+/**
+ * Ошибки HTTP-конверта.
+ */
+export const zMessagesErrorsHttp = z.object({
+    bodyNotObject: z.string(),
+    meetingTypeIdRequired: z.string(),
+    startFormat: z.string()
+});
+
+/**
+ * Тексты ошибок.
+ */
+export const zMessagesErrors = z.object({
+    api: zMessagesErrorsApi,
+    unexpected: z.string(),
+    domain: zMessagesErrorsDomain,
+    http: zMessagesErrorsHttp
+});
+
+/**
+ * Главная страница.
+ */
+export const zMessagesHome = z.object({
+    description: z.string(),
+    bookAction: z.string()
+});
+
+/**
+ * Каталог текстов целиком.
+ */
+export const zMessages = z.object({
+    common: zMessagesCommon,
+    home: zMessagesHome,
+    booking: zMessagesBooking,
+    admin: zMessagesAdmin,
+    errors: zMessagesErrors
+});
+
+/**
+ * Ответ ручки каталога.
+ */
+export const zMessagesPayload = z.object({
+    locale: z.string(),
+    messages: zMessages
+});
+
+/**
  * Доступный слот — свободный интервал, который можно забронировать.
  */
 export const zSlot = z.object({
@@ -142,3 +431,8 @@ export const zListAvailableSlotsPath = z.object({
  * The request has succeeded.
  */
 export const zListAvailableSlotsResponse = z.array(zSlotsDay);
+
+/**
+ * The request has succeeded.
+ */
+export const zGetMessagesResponse = zMessagesPayload;
