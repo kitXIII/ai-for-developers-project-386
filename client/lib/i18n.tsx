@@ -3,19 +3,12 @@ import { getMessagesOptions } from '@app/api/react-query';
 import { Button, Center, Loader, Stack, Text } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import type { Translate } from './message-path';
 
 // The client half of the catalog (ADR 0007): the tree arrives from
-// GET /api/v1/messages and the contract decides its shape. The leaf-path rule
-// repeats the server's `MessagePath` — the SPA cannot import server code.
-type Leaves<T> = {
-  [K in keyof T & string]: T[K] extends string ? K : `${K}.${Leaves<T[K]>}`;
-}[keyof T & string];
-
-type MessagePath = Leaves<Messages>;
-
-type MessageParams = Record<string, string | number>;
-
-type Translate = (key: MessagePath, params?: MessageParams) => string;
+// GET /api/v1/messages and the contract decides its shape. Leaf paths live in
+// `message-path.ts` so non-UI modules (error keys) share the same type.
+export type { MessagePath, Translate } from './message-path';
 
 const MessagesContext = createContext<Translate | null>(null);
 

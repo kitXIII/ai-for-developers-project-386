@@ -5,6 +5,7 @@ import { Calendar } from '@mantine/dates';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { dayLabel, timeRangeLabel } from '../../lib/datetime';
+import { useT } from '../../lib/i18n';
 
 type StepDateAndTimeProps = {
   meetingTypeId: string;
@@ -25,6 +26,7 @@ export function StepDateAndTime({
   selectedSlot,
   onSelectSlot,
 }: StepDateAndTimeProps) {
+  const t = useT();
   const [viewedMonth, setViewedMonth] = useState<string | null>(null);
   const {
     data: slotsDays,
@@ -35,13 +37,13 @@ export function StepDateAndTime({
   if (isPending) {
     return (
       <Center>
-        <Loader aria-label="Загрузка слотов" />
+        <Loader aria-label={t('booking.dateTime.loading')} />
       </Center>
     );
   }
 
   if (isError) {
-    return <Text c="dimmed">Не удалось загрузить слоты. Попробуйте ещё раз.</Text>;
+    return <Text c="dimmed">{t('booking.dateTime.loadFailed')}</Text>;
   }
 
   const availableDays = new Set(slotsDays.map((day) => day.date));
@@ -51,7 +53,10 @@ export function StepDateAndTime({
     <Stack gap="md" w="fit-content">
       <Calendar
         locale="ru"
-        ariaLabels={{ nextMonth: 'Следующий месяц', previousMonth: 'Предыдущий месяц' }}
+        ariaLabels={{
+          nextMonth: t('booking.dateTime.nextMonth'),
+          previousMonth: t('booking.dateTime.previousMonth'),
+        }}
         // The first day with slots opens the calendar; the guest can page further.
         date={viewedMonth ?? slotsDays[0]?.date}
         onDateChange={setViewedMonth}
@@ -64,7 +69,7 @@ export function StepDateAndTime({
       {selectedDay && (
         <Stack gap="xs">
           <Text size="sm" c="dimmed">
-            Свободное время {dayLabel(selectedDay)}:
+            {t('booking.dateTime.freeTime', { date: dayLabel(selectedDay) })}
           </Text>
           <Group gap="xs">
             {daySlots.map((slot) => (

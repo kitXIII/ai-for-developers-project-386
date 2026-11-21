@@ -14,40 +14,62 @@ import { zCreateMeetingTypeRequest } from '@app/api/zod';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router';
+import { apiErrorKey } from '../../lib/api-errors';
+import { useT, type MessagePath } from '../../lib/i18n';
+import {
+  DESCRIPTION_MAX,
+  DURATION_MAX,
+  DURATION_MIN,
+  SHORT_TEXT_MAX,
+  SHORT_TEXT_MIN,
+} from '../../lib/limits';
 
 type CreateMeetingTypeModalProps = {
   opened: boolean;
   onClose: () => void;
 };
 
-type FieldName = 'name' | 'description' | 'durationMinutes';
-type FieldErrors = Partial<Record<FieldName, string>>;
+// One catalog phrase per field: the contract Zod schema decides which fields
+// fail, the catalog decides how the failure is worded. The limits arrive as
+// `{min}`/`{max}` parameters, so the text cannot drift from the rule. This map
+// is the only list of the form's fields — the type and the guard derive from it.
+const fieldPhrases = {
+  name: {
+    key: 'admin.createModal.nameInvalid',
+    params: { min: SHORT_TEXT_MIN, max: SHORT_TEXT_MAX },
+  },
+  description: {
+    key: 'admin.createModal.descriptionInvalid',
+    params: { max: DESCRIPTION_MAX },
+  },
+  durationMinutes: {
+    key: 'admin.createModal.durationInvalid',
+    params: { min: DURATION_MIN, max: DURATION_MAX },
+  },
+} as const satisfies Record<string, { key: MessagePath; params: Record<string, number> }>;
 
-// One understandable message per field: the contract Zod schema decides which
-// fields fail, this map decides how the failure is phrased in the UI.
-const fieldMessages: Record<FieldName, string> = {
-  name: 'Название обязательно: от 1 до 100 символов, без пробелов по краям',
-  description: 'Описание обязательно: до 1000 символов',
-  durationMinutes: 'Длительность — целое число минут от 5 до 540',
-};
+type FieldName = keyof typeof fieldPhrases;
 
-function collectFieldErrors(issues: { path: PropertyKey[] }[]): FieldErrors {
-  const errors: FieldErrors = {};
+function isFieldName(value: PropertyKey): value is FieldName {
+  return Object.hasOwn(fieldPhrases, value);
+}
+
+function collectInvalidFields(issues: { path: PropertyKey[] }[]): FieldName[] {
+  const fields = new Set<FieldName>();
   for (const issue of issues) {
     const field = issue.path[0];
-    if (typeof field === 'string' && field in fieldMessages) {
-      const fieldName = field as FieldName;
-      if (!errors[fieldName]) {
-        errors[fieldName] = fieldMessages[fieldName];
-      }
+    if (field !== undefined && isFieldName(field)) {
+      fields.add(field);
     }
   }
-  return errors;
+  return [...fields];
 }
 
 export function CreateMeetingTypeModal({ opened, onClose }: CreateMeetingTypeModalProps) {
+  const t = useT();
+
   return (
-    <Modal opened={opened} onClose={onClose} title="Создать тип встречи">
+    <Modal opened={opened} onClose={onClose} title={t('admin.createModal.title')}>
       {/* The form mounts only while the modal is open, so each open starts clean. */}
       {opened && <CreateMeetingTypeForm onClose={onClose} />}
     </Modal>
@@ -55,13 +77,14 @@ export function CreateMeetingTypeModal({ opened, onClose }: CreateMeetingTypeMod
 }
 
 function CreateMeetingTypeForm({ onClose }: { onClose: () => void }) {
+  const t = useT();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [durationMinutes, setDurationMinutes] = useState<number | string>(30);
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [apiMessage, setApiMessage] = useState<string | null>(null);
+  const [invalidFields, setInvalidFields] = useState<FieldName[]>([]);
+  const [apiMessageKey, setApiMessageKey] = useState<MessagePath | null>(null);
 
   const createMeetingType = useMutation({
     ...createMeetingTypeMutation(),
@@ -71,9 +94,19 @@ function CreateMeetingTypeForm({ onClose }: { onClose: () => void }) {
       navigate(`/admin/meeting-types/${created.id}`);
     },
     onError: (error) => {
-      setApiMessage(error.message);
+      // A failure without a contract code keeps the wording this modal showed
+      // before the catalog existed.
+      setApiMessageKey(apiErrorKey(error, 'admin.createModal.failed'));
     },
   });
+
+  const fieldErrorText = (field: FieldName): string | undefined => {
+    if (!invalidFields.includes(field)) {
+      return undefined;
+    }
+    const { key, params } = fieldPhrases[field];
+    return t(key, params);
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -84,44 +117,44 @@ function CreateMeetingTypeForm({ onClose }: { onClose: () => void }) {
       durationMinutes: typeof durationMinutes === 'number' ? durationMinutes : Number.NaN,
     });
     if (!parsed.success) {
-      setFieldErrors(collectFieldErrors(parsed.error.issues));
+      setInvalidFields(collectInvalidFields(parsed.error.issues));
       return;
     }
-    setFieldErrors({});
-    setApiMessage(null);
+    setInvalidFields([]);
+    setApiMessageKey(null);
     createMeetingType.mutate({ body: parsed.data });
   };
 
   return (
     <form onSubmit={handleSubmit}>
       <Stack gap="sm">
-        {apiMessage && <Alert color="red">Не удалось создать тип встречи: {apiMessage}</Alert>}
+        {apiMessageKey && <Alert color="red">{t(apiMessageKey)}</Alert>}
         <TextInput
-          label="Название"
-          placeholder="Например, Созвон по проекту"
+          label={t('admin.createModal.nameLabel')}
+          placeholder={t('admin.createModal.namePlaceholder')}
           value={name}
           onChange={(event) => setName(event.currentTarget.value)}
-          error={fieldErrors.name}
+          error={fieldErrorText('name')}
         />
         <Textarea
-          label="Описание"
-          placeholder="О чём поговорим"
+          label={t('admin.createModal.descriptionLabel')}
+          placeholder={t('admin.createModal.descriptionPlaceholder')}
           value={description}
           onChange={(event) => setDescription(event.currentTarget.value)}
-          error={fieldErrors.description}
+          error={fieldErrorText('description')}
         />
         <NumberInput
-          label="Длительность (минуты)"
+          label={t('admin.createModal.durationLabel')}
           value={durationMinutes}
           onChange={setDurationMinutes}
-          error={fieldErrors.durationMinutes}
+          error={fieldErrorText('durationMinutes')}
         />
         <Group justify="flex-end" gap="sm">
           <Button variant="default" onClick={onClose}>
-            Отмена
+            {t('admin.createModal.cancel')}
           </Button>
           <Button type="submit" loading={createMeetingType.isPending}>
-            Создать
+            {t('admin.createModal.submit')}
           </Button>
         </Group>
       </Stack>

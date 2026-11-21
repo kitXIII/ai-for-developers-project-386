@@ -2,21 +2,23 @@ import { Alert, Badge, Card, Center, Group, Loader, Stack, Text, Title } from '@
 import { useQuery } from '@tanstack/react-query';
 import { listMeetingTypesOptions } from '@app/api/react-query';
 import { Link } from 'react-router';
+import { useT } from '../lib/i18n';
 
 export function BookingPage() {
+  const t = useT();
   const { data: meetingTypes, isPending, isError } = useQuery(listMeetingTypesOptions());
 
   return (
     <Stack gap="md">
-      <Title order={1}>Выбор типа встречи</Title>
+      <Title order={1}>{t('booking.list.title')}</Title>
       {isPending && (
         <Center>
-          <Loader aria-label="Загрузка типов встреч" />
+          <Loader aria-label={t('booking.list.loading')} />
         </Center>
       )}
-      {isError && <Alert color="red">Не удалось загрузить типы встреч.</Alert>}
+      {isError && <Alert color="red">{t('booking.list.loadFailed')}</Alert>}
       {meetingTypes && meetingTypes.length === 0 && (
-        <Text c="dimmed">Типов встреч пока нет — загляните позже.</Text>
+        <Text c="dimmed">{t('booking.list.empty')}</Text>
       )}
       {meetingTypes && meetingTypes.length > 0 && (
         <Stack gap="sm">
@@ -34,7 +36,7 @@ export function BookingPage() {
               <Group justify="space-between" wrap="nowrap">
                 <Title order={3}>{meetingType.name}</Title>
                 <Badge variant="light" color="teal">
-                  {meetingType.durationMinutes} мин
+                  {t('common.duration', { minutes: meetingType.durationMinutes })}
                 </Badge>
               </Group>
               {meetingType.description && <Text mt="xs">{meetingType.description}</Text>}
