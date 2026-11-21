@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.0](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.3.1...v0.4.0) (2026-11-21)
+
+
+### Features
+
+* **api:** каталог текстов в контракте и ручка GET /api/v1/messages ([#62](https://github.com/kitXIII/ai-for-developers-project-386/issues/62)) ([919e550](https://github.com/kitXIII/ai-for-developers-project-386/commit/919e550f82cde58040f68a28bc77676b808dc276)), closes [#55](https://github.com/kitXIII/ai-for-developers-project-386/issues/55)
+* **client:** брать тексты оболочки из каталога ([#66](https://github.com/kitXIII/ai-for-developers-project-386/issues/66)) ([2c15d50](https://github.com/kitXIII/ai-for-developers-project-386/commit/2c15d502a8560abc4e013fcb6ec37bcd4470c2c3)), closes [#58](https://github.com/kitXIII/ai-for-developers-project-386/issues/58)
+* **client:** тексты гостя и администрирования из каталога ([#67](https://github.com/kitXIII/ai-for-developers-project-386/issues/67)) ([56e9c6d](https://github.com/kitXIII/ai-for-developers-project-386/commit/56e9c6d2a34faec215977e09133b57191d9dfefa))
+
 ## [0.3.1](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.3.0...v0.3.1) (2026-11-17)
 
 
