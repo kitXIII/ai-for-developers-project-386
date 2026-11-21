@@ -10,7 +10,7 @@ components:
     because: 'the React SPA — renders UI, reaches the backend only through @app/api'
   server:
     in: server
-    because: 'wiring only — buildApp() and the process entry: adapters, clocks, error handler, routes'
+    because: 'wiring only — the composition root (composition.ts), the HTTP shell (buildApp) and the process entry: adapters, clocks, error handler, routes'
   # Flat layers: `priority: 1` makes each one own its directory, while wiring keeps app.ts/index.ts.
   server-routes:
     in: server/routes
