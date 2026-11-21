@@ -526,7 +526,8 @@
           "home",
           "booking",
           "admin",
-          "errors"
+          "errors",
+          "notFound"
         ],
         "properties": {
           "common": {
@@ -548,6 +549,10 @@
           "errors": {
             "$ref": "#/components/schemas/MessagesErrors",
             "description": "Тексты ошибок."
+          },
+          "notFound": {
+            "$ref": "#/components/schemas/MessagesNotFound",
+            "description": "Страница «не найдено»."
           }
         },
         "description": "Каталог текстов целиком."
@@ -1329,6 +1334,24 @@
           }
         },
         "description": "Главная страница."
+      },
+      "MessagesNotFound": {
+        "type": "object",
+        "required": [
+          "title",
+          "text"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Заголовок страницы: код ответа."
+          },
+          "text": {
+            "type": "string",
+            "description": "Пояснение, почему страницы нет."
+          }
+        },
+        "description": "Страница «не найдено»."
       },
       "MessagesPayload": {
         "type": "object",

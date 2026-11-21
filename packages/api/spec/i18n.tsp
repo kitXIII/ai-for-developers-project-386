@@ -22,6 +22,9 @@ model Messages {
 
   /** Тексты ошибок. */
   errors: MessagesErrors;
+
+  /** Страница «не найдено». */
+  notFound: MessagesNotFound;
 }
 
 /** Общие подписи. */
@@ -85,6 +88,15 @@ model MessagesHome {
 
   /** Кнопка перехода к записи. */
   bookAction: string;
+}
+
+/** Страница «не найдено». */
+model MessagesNotFound {
+  /** Заголовок страницы: код ответа. */
+  title: string;
+
+  /** Пояснение, почему страницы нет. */
+  text: string;
 }
 
 /** Гостевой сценарий. */
