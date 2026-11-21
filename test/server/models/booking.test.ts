@@ -4,8 +4,9 @@ import { DomainError } from '../../../server/models/errors.js';
 import type { MeetingType } from '../../../server/models/meeting-type.js';
 import { ms } from '../fixtures.js';
 
-// The booking model owns its value invariants (ADR 0004). Texts are not
-// pinned: the matrix checks the error kind only, so the copy stays free.
+// The booking model owns its value invariants (ADR 0004). Wording is not
+// pinned: the matrix checks the error kind, the key is checked once — the
+// catalog decides the phrase (ADR 0007).
 const meetingType: MeetingType = {
   id: 'meeting-type-1',
   name: 'Знакомство',
@@ -40,6 +41,12 @@ describe('parseGuestName', () => {
     ['имя длиннее 100 символов', 'а'.repeat(101)],
   ])('бросает invalid_value: %s', (_title, value) => {
     expect(captureDomainError(() => parseGuestName(value)).kind).toBe('invalid_value');
+  });
+
+  it('называет ключ каталога', () => {
+    expect(captureDomainError(() => parseGuestName('')).key).toBe(
+      'errors.domain.booking.guestName',
+    );
   });
 });
 

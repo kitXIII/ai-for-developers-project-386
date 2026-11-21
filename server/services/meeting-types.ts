@@ -18,7 +18,7 @@ export async function getMeetingType(
 ): Promise<MeetingType> {
   const meetingType = await meetingTypes.findById(id);
   if (!meetingType) {
-    throw new DomainError('not_found', 'Тип встречи не найден.');
+    throw new DomainError('not_found', 'errors.domain.meetingType.notFound');
   }
   return meetingType;
 }

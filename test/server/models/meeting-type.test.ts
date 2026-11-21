@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { DomainError } from '../../../server/models/errors.js';
 import { parseMeetingTypeData } from '../../../server/models/meeting-type.js';
 
-// The model owns the value invariants of a meeting type (ADR 0004). Texts are
-// not pinned: the matrix checks the error kind only, so the copy stays free.
+// The model owns the value invariants of a meeting type (ADR 0004). Wording is
+// not pinned: the matrix checks the error kind, and the key is checked once per
+// field — the catalog decides the phrase (ADR 0007).
 const validMeetingTypeData = {
   name: 'Знакомство',
   description: 'Короткий видеозвонок для знакомства',
@@ -54,4 +55,23 @@ describe('parseMeetingTypeData', () => {
   ] as [string, Record<string, unknown>][])('бросает invalid_value: %s', (_title, fields) => {
     expect(captureDomainError(() => parseMeetingTypeData(fields)).kind).toBe('invalid_value');
   });
+
+  it.each([
+    ['имя', { ...validMeetingTypeData, name: '' }, 'errors.domain.meetingType.name'],
+    [
+      'описание',
+      { ...validMeetingTypeData, description: 'о'.repeat(1001) },
+      'errors.domain.meetingType.description',
+    ],
+    [
+      'длительность',
+      { ...validMeetingTypeData, durationMinutes: 4 },
+      'errors.domain.meetingType.duration',
+    ],
+  ] as [string, Record<string, unknown>, string][])(
+    'называет ключ каталога: %s',
+    (_title, fields, key) => {
+      expect(captureDomainError(() => parseMeetingTypeData(fields)).key).toBe(key);
+    },
+  );
 });

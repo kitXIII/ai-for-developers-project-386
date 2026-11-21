@@ -1,6 +1,6 @@
 import { DomainError } from './errors.js';
 import type { MeetingType } from './meeting-type.js';
-import { isShortText } from './text.js';
+import { isShortText, SHORT_TEXT_MAX, SHORT_TEXT_MIN } from './text.js';
 
 // The booking entity (ADR 0004): everything is epoch-ms here, the repository
 // owns `id`, the contract moments are built by the adapter.
@@ -18,14 +18,13 @@ export type Booking = {
 // the model derives.
 export type BookingData = Omit<Booking, 'id'>;
 
-// The rule is shared with the meeting type `name`; the message names the field
-// and stays here.
+// The rule is shared with the meeting type `name`; the key names the field.
 export function parseGuestName(value: unknown): string {
   if (!isShortText(value)) {
-    throw new DomainError(
-      'invalid_value',
-      'Имя обязательно: от 1 до 100 символов, без пробелов по краям.',
-    );
+    throw new DomainError('invalid_value', 'errors.domain.booking.guestName', {
+      min: SHORT_TEXT_MIN,
+      max: SHORT_TEXT_MAX,
+    });
   }
   return value;
 }

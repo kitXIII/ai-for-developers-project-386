@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { parseGuestName, type Booking } from '../models/booking.js';
 import type { Schedule } from '../models/schedule.js';
 import type { CreateBookingInput } from '../services/bookings.js';
+import { t } from '../shared/i18n/index.js';
 import { formatMoment } from '../shared/moment.js';
 import { parseJsonObject } from './body.js';
 import { ApiError } from './errors.js';
@@ -12,16 +13,13 @@ import { ApiError } from './errors.js';
 const momentWithOffset =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/;
 
-const invalidStartMessage =
-  'Время начала — ISO-момент со смещением, например 2026-12-01T10:00:00+03:00.';
-
 function parseStartMs(value: unknown): number {
   if (typeof value !== 'string' || !momentWithOffset.test(value)) {
-    throw new ApiError(400, 'validation_failed', invalidStartMessage);
+    throw new ApiError(400, 'validation_failed', t('errors.http.startFormat'));
   }
   const startMs = Date.parse(value);
   if (Number.isNaN(startMs)) {
-    throw new ApiError(400, 'validation_failed', invalidStartMessage);
+    throw new ApiError(400, 'validation_failed', t('errors.http.startFormat'));
   }
   return startMs;
 }
@@ -61,7 +59,7 @@ export async function bookingRoutes(
     // start → guestName — so a 400 on the name beats a 404 on an unknown type.
     const { meetingTypeId } = body;
     if (typeof meetingTypeId !== 'string' || meetingTypeId.length === 0) {
-      throw new ApiError(400, 'validation_failed', 'Укажите тип встречи.');
+      throw new ApiError(400, 'validation_failed', t('errors.http.meetingTypeIdRequired'));
     }
     const startMs = parseStartMs(body.start);
     const guestName = parseGuestName(body.guestName);
