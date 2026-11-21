@@ -8,6 +8,7 @@ import { adminMeetingTypeRoutes } from './routes/admin-meeting-types.js';
 import { bookingRoutes } from './routes/bookings.js';
 import { registerErrorHandler } from './routes/errors.js';
 import { meetingTypeRoutes } from './routes/meeting-types.js';
+import { messagesRoutes } from './routes/messages.js';
 
 type BuildAppOptions = {
   // Tests disable the client to avoid starting Vite.
@@ -43,6 +44,7 @@ export async function buildApp({
     schedule: deps.schedule,
   });
   await app.register(bookingRoutes, { bookings: deps.bookings, schedule: deps.schedule });
+  await app.register(messagesRoutes);
 
   if (serveClient) {
     await app.register(FastifyVite, {

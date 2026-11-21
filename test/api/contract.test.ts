@@ -1,5 +1,5 @@
 import * as Ajv2020Module from 'ajv/dist/2020.js';
-import type { AdminMeetingType, Booking } from '@app/api/types';
+import type { AdminMeetingType, Booking, MessagesPayload } from '@app/api/types';
 import type { FastifyInstance } from 'fastify';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -57,6 +57,7 @@ const adminMeetingTypesPath = '/api/v1/admin/meeting-types';
 const adminBookingsPath = '/api/v1/admin/bookings';
 const meetingTypesPath = '/api/v1/meeting-types';
 const bookingsPath = '/api/v1/bookings';
+const messagesPath = '/api/v1/messages';
 const validMeetingType = {
   name: 'Знакомство',
   description: 'Короткий видеозвонок для знакомства',
@@ -160,6 +161,8 @@ const operations: OperationCase[] = [
     },
   },
   { method: 'GET', path: adminBookingsPath, status: 200 },
+  // Каталог текстов: единственная операция без доменных ресурсов (ADR 0007).
+  { method: 'GET', path: messagesPath, status: 200 },
 ];
 
 // State is seeded through the API itself — the contract suite never touches
@@ -317,7 +320,7 @@ describe('API contract', () => {
       ({ method, path, pathTemplate, status }) => `${method} ${pathTemplate ?? path} ${status}`,
     );
 
-    // The document is the source of truth: 8 operations, every status they
+    // The document is the source of truth: 9 operations, every status they
     // document exercised once — and no case may reference a status or an
     // operation the document does not know.
     const documented: string[] = [];
@@ -333,14 +336,25 @@ describe('API contract', () => {
         );
       }
     }
-    // «Ответ каждой из 8 операций»: POST and GET share one path, so operations
+    // «Ответ каждой из 9 операций»: POST and GET share one path, so operations
     // are counted as method+path pairs, not paths.
     expect(
       new Set(documented.map((key) => key.slice(0, key.lastIndexOf(' ')))).size,
-      'the document declares 8 operations',
-    ).toBe(8);
+      'the document declares 9 operations',
+    ).toBe(9);
 
     expect(covered.sort()).toEqual(documented.sort());
+  });
+
+  it(`GET ${messagesPath} returns the Russian catalog`, async () => {
+    const response = await app.inject({ method: 'GET', url: messagesPath });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as MessagesPayload;
+    expect(body.locale).toBe('ru');
+    // Spot check: the app name and an API-error phrase the client resolves by code.
+    expect(body.messages.common.appName).toBe('Календарь звонков');
+    expect(body.messages.errors.api.slot_taken).toBeTruthy();
   });
 
   it(`GET ${adminMeetingTypesPath}/{id} returns the seeded type`, async () => {
