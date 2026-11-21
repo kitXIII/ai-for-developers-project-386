@@ -3,27 +3,27 @@ import { useDisclosure } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { listAdminMeetingTypesOptions } from '@app/api/react-query';
 import { Link } from 'react-router';
+import { useT } from '../../lib/i18n';
 import { CreateMeetingTypeModal } from './CreateMeetingTypeModal';
 
 export function MeetingTypesTab() {
+  const t = useT();
   const [createOpened, { open: openCreate, close: closeCreate }] = useDisclosure(false);
   const { data: meetingTypes, isPending, isError } = useQuery(listAdminMeetingTypesOptions());
 
   return (
     <Stack gap="md">
       <Group justify="flex-end">
-        <Button onClick={openCreate}>Создать тип</Button>
+        <Button onClick={openCreate}>{t('admin.meetingTypes.create')}</Button>
       </Group>
       {isPending && (
         <Center>
-          <Loader aria-label="Загрузка типов встреч" />
+          <Loader aria-label={t('admin.meetingTypes.loading')} />
         </Center>
       )}
-      {isError && <Alert color="red">Не удалось загрузить типы встреч.</Alert>}
+      {isError && <Alert color="red">{t('admin.meetingTypes.loadFailed')}</Alert>}
       {meetingTypes && meetingTypes.length === 0 && (
-        <Text c="dimmed">
-          Типов встреч пока нет. Создайте первый — и гости смогут на него записаться.
-        </Text>
+        <Text c="dimmed">{t('admin.meetingTypes.empty')}</Text>
       )}
       {meetingTypes && meetingTypes.length > 0 && (
         <Stack gap="sm">
@@ -37,7 +37,7 @@ export function MeetingTypesTab() {
             >
               <Title order={3}>{meetingType.name}</Title>
               <Text c="dimmed" fz="sm">
-                Длительность: {meetingType.durationMinutes} мин
+                {t('admin.meetingTypes.duration', { minutes: meetingType.durationMinutes })}
               </Text>
               {meetingType.description && <Text mt="xs">{meetingType.description}</Text>}
             </Card>

@@ -6,17 +6,21 @@ import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router';
 import { isMeetingTypeNotFound } from '../../lib/api-errors';
 import { dayLabel, timeRangeLabel } from '../../lib/datetime';
+import { useT, type MessagePath } from '../../lib/i18n';
 import { StepDateAndTime } from './StepDateAndTime';
 import { StepNameAndConfirm } from './StepNameAndConfirm';
 
 type WizardStep = 1 | 2 | 3;
 
+const totalSteps = 3;
+
 // Steps of the guest booking wizard, in order; the indicator is plain text
-// («Шаг N из 3») — the Stepper component is deliberately not used.
-const stepTitles: Record<WizardStep, string> = {
-  1: 'Тип',
-  2: 'Дата и время',
-  3: 'Имя и подтверждение',
+// («Шаг N из 3») — the Stepper component is deliberately not used. The catalog
+// keys are named by role, not by text.
+const stepTitleKeys: Record<WizardStep, MessagePath> = {
+  1: 'booking.wizard.steps.type',
+  2: 'booking.wizard.steps.dateTime',
+  3: 'booking.wizard.steps.confirm',
 };
 
 type WizardLocationState = {
@@ -38,6 +42,7 @@ export function BookingWizardPage() {
 }
 
 function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fromList: boolean }) {
+  const t = useT();
   const [step, setStep] = useState<WizardStep>(fromList ? 1 : 2);
   // The picked day and slot live here so step «Имя и подтверждение» (#14) can
   // book them; picking another day always invalidates the picked slot.
@@ -65,7 +70,7 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
   if (isPending) {
     return (
       <Center>
-        <Loader aria-label="Загрузка типа встречи" />
+        <Loader aria-label={t('booking.wizard.loading')} />
       </Center>
     );
   }
@@ -75,10 +80,10 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
     return (
       <Stack gap="sm">
         <Anchor component={Link} to="/booking">
-          К выбору типа
+          {t('booking.wizard.backToList')}
         </Anchor>
         <Text c="dimmed">
-          {notFound ? 'Тип встречи не найден.' : 'Не удалось загрузить тип встречи.'}
+          {notFound ? t('booking.wizard.notFound') : t('booking.wizard.loadFailed')}
         </Text>
       </Stack>
     );
@@ -89,12 +94,16 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
   if (createdBooking) {
     return (
       <Stack gap="md">
-        <Title order={2}>Бронирование подтверждено</Title>
+        <Title order={2}>{t('booking.success.title')}</Title>
         <Stack gap="xs">
-          <Text>Тип встречи: {createdBooking.meetingTypeName}</Text>
-          <Text>День: {dayLabel(createdBooking.start)}</Text>
-          <Text>Время: {timeRangeLabel(createdBooking.start, createdBooking.end)} (UTC+3)</Text>
-          <Text>Гость: {createdBooking.guestName}</Text>
+          <Text>{t('booking.success.meetingType', { name: createdBooking.meetingTypeName })}</Text>
+          <Text>{t('booking.success.day', { day: dayLabel(createdBooking.start) })}</Text>
+          <Text>
+            {t('booking.success.time', {
+              time: timeRangeLabel(createdBooking.start, createdBooking.end),
+            })}
+          </Text>
+          <Text>{t('booking.success.guest', { name: createdBooking.guestName })}</Text>
         </Stack>
       </Stack>
     );
@@ -103,15 +112,15 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
   return (
     <Stack gap="md">
       <Anchor component={Link} to="/booking">
-        К выбору типа
+        {t('booking.wizard.backToList')}
       </Anchor>
       <Title order={1}>{meetingType.name}</Title>
-      <Text c="dimmed">Шаг {step} из 3</Text>
-      <Title order={2}>{stepTitles[step]}</Title>
+      <Text c="dimmed">{t('booking.wizard.stepCounter', { step, total: totalSteps })}</Text>
+      <Title order={2}>{t(stepTitleKeys[step])}</Title>
       {step === 1 && (
         <Stack gap="xs">
           <Badge variant="light" color="teal" w="fit-content">
-            {meetingType.durationMinutes} мин
+            {t('common.duration', { minutes: meetingType.durationMinutes })}
           </Badge>
           {meetingType.description && <Text>{meetingType.description}</Text>}
         </Stack>
@@ -140,12 +149,12 @@ function BookingWizard({ meetingTypeId, fromList }: { meetingTypeId: string; fro
             variant="default"
             onClick={() => setStep((current) => (current - 1) as WizardStep)}
           >
-            Назад
+            {t('common.actions.back')}
           </Button>
         )}
         {step < 3 && (
           <Button onClick={() => setStep((current) => (current + 1) as WizardStep)}>
-            Продолжить
+            {t('common.actions.next')}
           </Button>
         )}
       </Group>

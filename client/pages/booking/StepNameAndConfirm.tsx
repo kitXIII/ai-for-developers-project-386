@@ -5,7 +5,10 @@ import { zCreateBookingRequest } from '@app/api/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { apiErrorKey, errorCodeOf, isConflictCode } from '../../lib/api-errors';
 import { dayLabel, timeRangeLabel } from '../../lib/datetime';
+import { useT, type MessagePath } from '../../lib/i18n';
+import { SHORT_TEXT_MAX, SHORT_TEXT_MIN } from '../../lib/limits';
 
 type StepNameAndConfirmProps = {
   meetingTypeId: string;
@@ -18,19 +21,6 @@ type StepNameAndConfirmProps = {
   onBackToDateTime: () => void;
 };
 
-// One understandable Russian phrase per contract error code the operation can
-// answer with; the code decides the meaning, this map decides the wording.
-const apiErrorMessages: Record<ErrorCode, string> = {
-  validation_failed: 'Проверьте правильность заполнения формы.',
-  meeting_type_not_found: 'Тип встречи не найден.',
-  slot_taken: 'Это время уже занято. Выберите другой слот.',
-  outside_window: 'Это время вне окна записи: бронировать можно на 14 дней вперёд.',
-  outside_schedule: 'Это время вне графика работы: брони доступны в будни с 09:00 до 18:00.',
-};
-
-// 409 codes mean the picked slot is gone or unusable — the fix is another slot.
-const conflictCodes: ErrorCode[] = ['slot_taken', 'outside_window', 'outside_schedule'];
-
 export function StepNameAndConfirm({
   meetingTypeId,
   meetingTypeName,
@@ -38,24 +28,20 @@ export function StepNameAndConfirm({
   onBooked,
   onBackToDateTime,
 }: StepNameAndConfirmProps) {
+  const t = useT();
   const [guestName, setGuestName] = useState('');
-  const [fieldError, setFieldError] = useState<string | null>(null);
+  const [fieldErrorKey, setFieldErrorKey] = useState<MessagePath | null>(null);
+  const [apiMessageKey, setApiMessageKey] = useState<MessagePath | null>(null);
   const [apiCode, setApiCode] = useState<ErrorCode | null>(null);
-  const [apiMessage, setApiMessage] = useState<string | null>(null);
 
   const createBooking = useMutation({
     ...createBookingMutation(),
     onSuccess: (booking) => onBooked(booking),
     onError: (error) => {
-      // Contract errors carry the machine-readable code; anything else
-      // (network, unexpected) stays a generic failure.
-      if ('code' in error && error.code in apiErrorMessages) {
-        setApiCode(error.code);
-        setApiMessage(apiErrorMessages[error.code]);
-      } else {
-        setApiCode(null);
-        setApiMessage('Не удалось создать бронирование. Попробуйте ещё раз.');
-      }
+      // Contract errors carry the machine-readable code; the catalog turns the
+      // code into a phrase, anything else falls back to `errors.unexpected`.
+      setApiCode(errorCodeOf(error));
+      setApiMessageKey(apiErrorKey(error));
     },
   });
 
@@ -70,17 +56,17 @@ export function StepNameAndConfirm({
     const start = new Date(Date.parse(selectedSlot.start)).toISOString();
     const parsed = zCreateBookingRequest.safeParse({ meetingTypeId, start, guestName });
     if (!parsed.success) {
-      setFieldError('Имя обязательно: от 1 до 100 символов, без пробелов по краям');
+      setFieldErrorKey('booking.confirm.nameInvalid');
       return;
     }
-    setFieldError(null);
+    setFieldErrorKey(null);
     setApiCode(null);
-    setApiMessage(null);
+    setApiMessageKey(null);
     createBooking.mutate({ body: parsed.data });
   };
 
   if (!selectedSlot) {
-    return <Text c="dimmed">Сначала выберите дату и время.</Text>;
+    return <Text c="dimmed">{t('booking.confirm.noSlotSelected')}</Text>;
   }
 
   // Moments carry the +03:00 offset (ADR 0002) — the summary labels come from
@@ -91,25 +77,31 @@ export function StepNameAndConfirm({
   return (
     <form onSubmit={handleSubmit}>
       <Stack gap="sm" w="fit-content" maw="100%">
-        {apiMessage && <Alert color="red">{apiMessage}</Alert>}
-        {apiCode && conflictCodes.includes(apiCode) && (
+        {apiMessageKey && <Alert color="red">{t(apiMessageKey)}</Alert>}
+        {apiCode && isConflictCode(apiCode) && (
           <Button variant="default" w="fit-content" onClick={onBackToDateTime}>
-            Выбрать другое время
+            {t('booking.confirm.otherTime')}
           </Button>
         )}
         <Text size="sm" c="dimmed">
-          {meetingTypeName}, {slotDay}, {slotTime} (UTC+3)
+          {t('booking.confirm.summary', {
+            meetingTypeName,
+            day: slotDay,
+            time: slotTime,
+          })}
         </Text>
         <TextInput
-          label="Имя"
-          placeholder="Как к вам обращаться"
+          label={t('booking.confirm.nameLabel')}
+          placeholder={t('booking.confirm.namePlaceholder')}
           value={guestName}
           onChange={(event) => setGuestName(event.currentTarget.value)}
-          error={fieldError}
+          error={
+            fieldErrorKey ? t(fieldErrorKey, { min: SHORT_TEXT_MIN, max: SHORT_TEXT_MAX }) : null
+          }
         />
         <Group justify="flex-end" gap="sm">
           <Button type="submit" loading={createBooking.isPending}>
-            Подтвердить
+            {t('booking.confirm.submit')}
           </Button>
         </Group>
       </Stack>
