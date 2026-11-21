@@ -8,6 +8,7 @@ import 'dayjs/locale/ru';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
+import { MessagesProvider } from './lib/i18n';
 import { router } from './router';
 
 const theme = createTheme({ primaryColor: 'teal' });
@@ -18,7 +19,10 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme="auto">
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        {/* The catalog gates the router: no view renders before the texts arrive. */}
+        <MessagesProvider>
+          <RouterProvider router={router} />
+        </MessagesProvider>
       </QueryClientProvider>
     </MantineProvider>
   </StrictMode>,
