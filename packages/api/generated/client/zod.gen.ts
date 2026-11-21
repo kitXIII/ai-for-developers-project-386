@@ -342,6 +342,14 @@ export const zMessagesHome = z.object({
 });
 
 /**
+ * Страница «не найдено».
+ */
+export const zMessagesNotFound = z.object({
+    title: z.string(),
+    text: z.string()
+});
+
+/**
  * Каталог текстов целиком.
  */
 export const zMessages = z.object({
@@ -349,7 +357,8 @@ export const zMessages = z.object({
     home: zMessagesHome,
     booking: zMessagesBooking,
     admin: zMessagesAdmin,
-    errors: zMessagesErrors
+    errors: zMessagesErrors,
+    notFound: zMessagesNotFound
 });
 
 /**
