@@ -54,41 +54,49 @@ export async function buildApp({
     await deps.close();
   });
 
-  registerErrorHandler(app);
+  try {
+    registerErrorHandler(app);
 
-  await app.register(adminMeetingTypeRoutes, { meetingTypes: deps.meetingTypes });
-  await app.register(adminBookingRoutes, { bookings: deps.bookings, schedule: deps.schedule });
-  await app.register(meetingTypeRoutes, {
-    meetingTypes: deps.meetingTypes,
-    schedule: deps.schedule,
-  });
-  await app.register(bookingRoutes, { bookings: deps.bookings, schedule: deps.schedule });
-  await app.register(messagesRoutes);
+    await app.register(adminMeetingTypeRoutes, { meetingTypes: deps.meetingTypes });
+    await app.register(adminBookingRoutes, { bookings: deps.bookings, schedule: deps.schedule });
+    await app.register(meetingTypeRoutes, {
+      meetingTypes: deps.meetingTypes,
+      schedule: deps.schedule,
+    });
+    await app.register(bookingRoutes, { bookings: deps.bookings, schedule: deps.schedule });
+    await app.register(messagesRoutes);
 
-  if (serveClient) {
-    await app.register(FastifyVite, {
-      // Running from `server/` during development and from `dist/` in production,
-      // so `..` points to the project root in both cases.
-      root: resolve(import.meta.dirname, '..'),
-      dev: process.argv.includes('--dev'),
-      spa: true,
+    if (serveClient) {
+      await app.register(FastifyVite, {
+        // Running from `server/` during development and from `dist/` in production,
+        // so `..` points to the project root in both cases.
+        root: resolve(import.meta.dirname, '..'),
+        dev: process.argv.includes('--dev'),
+        spa: true,
+      });
+
+      app.get('/', (_request, reply) => reply.html());
+    }
+
+    // SPA fallback: any non-API GET request renders the client app,
+    // so client-side routes work on a hard refresh or direct link.
+    app.setNotFoundHandler((request, reply) => {
+      if (serveClient && request.method === 'GET' && !/^\/api(\/|$)/.test(request.url)) {
+        return reply.html();
+      }
+      return reply.code(404).send({ message: 'Not Found' });
     });
 
-    app.get('/', (_request, reply) => reply.html());
-  }
-
-  // SPA fallback: any non-API GET request renders the client app,
-  // so client-side routes work on a hard refresh or direct link.
-  app.setNotFoundHandler((request, reply) => {
-    if (serveClient && request.method === 'GET' && !/^\/api(\/|$)/.test(request.url)) {
-      return reply.html();
+    if (serveClient) {
+      await app.vite.ready();
     }
-    return reply.code(404).send({ message: 'Not Found' });
-  });
 
-  if (serveClient) {
-    await app.vite.ready();
+    return app;
+  } catch (error) {
+    // The `onClose` hook is already registered, so closing the app releases the
+    // pool; without this a failing plugin registration or `vite.ready()` would
+    // leak it until the process exits.
+    await app.close();
+    throw error;
   }
-
-  return app;
 }
