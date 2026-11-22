@@ -80,12 +80,19 @@ Commitlint проверяет каждый коммит: заголовок — 
 ## Структура
 
 - `client/` — React 19 + Mantine 9 (SPA, Vite); `server/` — Fastify 5, точка входа `server/index.ts`,
-  приложение собирается в `buildApp()` (`server/app.ts`);
+  приложение собирается в `buildApp()` (`server/app.ts`); тексты интерфейса и ошибок — каталог
+  `server/shared/i18n/` (`ru.ts`, `t()`), на клиенте его загружает `<MessagesProvider>`
+  (`client/lib/i18n.tsx`) через `GET /api/v1/messages`;
 - `packages/api` (`@app/api`) — единственный workspace-пакет: контракт + генерируемый SDK.
 
 ## Ограничения
 
 - `dist/`, `node_modules/`, `packages/api/generated/` — не рецензировать и не исправлять.
+- Пользовательский текст в `client/**` и `server/**` — только из каталога: новая строка = новый
+  ключ в `server/shared/i18n/ru.ts`, новая ветка — модель в `packages/api/spec/i18n.tsp`. Кириллицу
+  вне каталога ловит `test/i18n/no-hardcoded-text.test.ts`; документированные исключения — каталог
+  `server/shared/i18n/` и bootstrap-экран в `client/lib/i18n.tsx`, который показывается до
+  загрузки каталога. См. `docs/adr/0007-i18n-message-catalog.md`.
 - `.github/workflows/hexlet-check.yml` — не трогать.
 - `.agents/skills/` — вендорские сторонние скиллы: исключены из oxfmt, typos и agnix; не редактировать и не форматировать.
 
