@@ -28,7 +28,7 @@ type ComposeOptions = {
   databaseUrl?: string;
 };
 
-type Database = {
+type Persistence = {
   meetingTypes: MeetingTypeRepository;
   bookings: BookingRepository;
   checkConnection: () => Promise<void>;
@@ -38,7 +38,7 @@ type Database = {
 // Without `DATABASE_URL` nothing changes for the API: the in-memory adapters
 // keep state in the process, the connection check is a no-op and `close` is
 // idempotent (there is nothing to close).
-function inMemoryDatabase(): Database {
+function inMemoryPersistence(): Persistence {
   return {
     meetingTypes: inMemoryMeetingTypes(),
     bookings: inMemoryBookings(),
@@ -49,7 +49,7 @@ function inMemoryDatabase(): Database {
 
 // With `DATABASE_URL` both ports go through one pool and one Drizzle instance:
 // the adapters are the same implementation tests run on PGlite (ADR 0008).
-function postgresDatabase(connectionString: string): Database {
+function postgresPersistence(connectionString: string): Persistence {
   const pool = new Pool({ connectionString });
   const db = drizzle(pool, { schema });
   let closed: Promise<void> | undefined;
@@ -79,14 +79,16 @@ export function composeDependencies({
   // Configuration errors fail the process here, before any route is registered.
   assertSchedule(schedule);
 
-  const database =
-    databaseUrl && databaseUrl.trim() !== '' ? postgresDatabase(databaseUrl) : inMemoryDatabase();
+  const persistence =
+    databaseUrl && databaseUrl.trim() !== ''
+      ? postgresPersistence(databaseUrl)
+      : inMemoryPersistence();
 
   // One adapters bundle is assembled here and passed structurally: scenarios
   // still declare exactly the dependencies they read (ADR 0004).
   const domain = {
-    meetingTypes: database.meetingTypes,
-    bookings: database.bookings,
+    meetingTypes: persistence.meetingTypes,
+    bookings: persistence.bookings,
     schedule,
     now: () => Date.parse(now()),
   };
@@ -106,7 +108,7 @@ export function composeDependencies({
     },
     // Startup checks the connection before the app is returned, and `onClose`
     // releases the pool; both are no-ops for the in-memory adapters.
-    checkConnection: database.checkConnection,
-    close: database.close,
+    checkConnection: persistence.checkConnection,
+    close: persistence.close,
   };
 }
