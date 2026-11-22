@@ -90,6 +90,24 @@ mise run build   # соберёт клиент и сервер в dist/
 mise run start   # запустит собранный сервер с NODE_ENV=production
 ```
 
+### Postgres
+
+По умолчанию данные по-прежнему живут в памяти процесса. Чтобы сохранять их между рестартами,
+задайте `DATABASE_URL` и примените миграции:
+
+```bash
+export DATABASE_URL='postgres://localhost:5432/calendar'
+
+mise run db:migrate   # применяет SQL-миграции из migrations/ к DATABASE_URL
+mise run              # dev-сервер на этом подключении
+```
+
+С непустым `DATABASE_URL` оба репозитория работают через один пул `pg.Pool` и один Drizzle-инстанс;
+при старте приложение проверяет соединение (`SELECT 1`) и падает, если база недоступна. Без
+переменной или с пустой строкой остаются in-memory адаптеры, и поведение API не меняется.
+Миграции приложение само не применяет — только `mise run db:migrate`. Схема, exclusion constraint
+и тесты адаптеров на PGLite — [docs/adr/0008-postgres-drizzle.md](docs/adr/0008-postgres-drizzle.md).
+
 ## Docker
 
 Прод-образ собирается multi-stage `Dockerfile` на базе `node:26-alpine`.
