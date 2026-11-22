@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../../server/app.js';
 import { composeDependencies } from '../../server/composition.js';
+import { SEED_MEETING_TYPE } from './fixtures.js';
 
 // The composition root (ADR 0006/0008) is the only place that picks concrete
 // adapters: without `DATABASE_URL` the app keeps the in-memory ones, so every
@@ -9,11 +10,7 @@ describe('composeDependencies без DATABASE_URL', () => {
   it('собирает in-memory адаптеры: типы и брони живут в процессе', async () => {
     const deps = composeDependencies();
 
-    const meetingType = await deps.meetingTypes.create({
-      name: 'Знакомство',
-      description: 'Короткий видеозвонок для знакомства',
-      durationMinutes: 30,
-    });
+    const meetingType = await deps.meetingTypes.create(SEED_MEETING_TYPE);
     expect(meetingType.id).not.toBe('');
 
     expect(await deps.meetingTypes.list()).toEqual([meetingType]);
@@ -22,11 +19,7 @@ describe('composeDependencies без DATABASE_URL', () => {
   it('пустая строка эквивалентна отсутствию DATABASE_URL', async () => {
     const deps = composeDependencies({ databaseUrl: '' });
 
-    const meetingType = await deps.meetingTypes.create({
-      name: 'Знакомство',
-      description: 'Короткий видеозвонок для знакомства',
-      durationMinutes: 30,
-    });
+    const meetingType = await deps.meetingTypes.create(SEED_MEETING_TYPE);
 
     expect(await deps.meetingTypes.list()).toEqual([meetingType]);
   });

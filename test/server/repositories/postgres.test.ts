@@ -3,12 +3,10 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { BookingData } from '../../../server/models/booking.js';
 import { DomainError } from '../../../server/models/errors.js';
-import type { MeetingType, MeetingTypeData } from '../../../server/models/meeting-type.js';
 import { postgresBookings, postgresMeetingTypes } from '../../../server/repositories/postgres.js';
 import * as schema from '../../../server/repositories/schema.js';
-import { ms } from '../fixtures.js';
+import { bookingData, ms, seedMeetingType } from '../fixtures.js';
 import { describeRepositoryContract } from './suite.js';
 
 // One PGlite instance per file: the WASM Postgres boots once, migrations run
@@ -43,12 +41,6 @@ beforeEach(truncate);
 
 describeRepositoryContract('pg-адаптеры (PGLite)', { create: adapters });
 
-const seedData: MeetingTypeData = {
-  name: 'Знакомство',
-  description: 'Короткий видеозвонок для знакомства',
-  durationMinutes: 30,
-};
-
 // Drizzle wraps driver errors; the SQLSTATE lives on the cause chain.
 function sqlState(error: unknown): unknown {
   let current: unknown = error;
@@ -59,23 +51,13 @@ function sqlState(error: unknown): unknown {
   return undefined;
 }
 
-function bookingData(meetingType: MeetingType, startMs: number): BookingData {
-  return {
-    meetingTypeId: meetingType.id,
-    meetingTypeName: meetingType.name,
-    guestName: 'Мария Петрова',
-    startMs,
-    endMs: startMs + meetingType.durationMinutes * 60_000,
-  };
-}
-
 // The schema guarantees the «no overlapping bookings» invariant (ADR 0004,
 // «Атомарность „проверил → записал“»): the adapter only translates the
 // exclusion violation into the domain error.
 describe('pg-адаптер броней: exclusion constraint', () => {
   it('одинаковый старт и одинаковая длительность — DomainError slot_taken', async () => {
     const { meetingTypes, bookings } = adapters();
-    const meetingType = await meetingTypes.create(seedData);
+    const meetingType = await seedMeetingType(meetingTypes);
     const startMs = ms('2026-11-17T09:00:00+03:00');
 
     await bookings.create(bookingData(meetingType, startMs));
@@ -88,9 +70,8 @@ describe('pg-адаптер броней: exclusion constraint', () => {
 
   it('частичное пересечение разных длительностей — DomainError slot_taken', async () => {
     const { meetingTypes, bookings } = adapters();
-    const shorter = await meetingTypes.create(seedData);
-    const longer = await meetingTypes.create({
-      ...seedData,
+    const shorter = await seedMeetingType(meetingTypes);
+    const longer = await seedMeetingType(meetingTypes, {
       name: 'Консультация',
       durationMinutes: 60,
     });
@@ -109,9 +90,8 @@ describe('pg-адаптер броней: exclusion constraint', () => {
 
   it('одинаковый старт разных длительностей — DomainError slot_taken', async () => {
     const { meetingTypes, bookings } = adapters();
-    const shorter = await meetingTypes.create(seedData);
-    const longer = await meetingTypes.create({
-      ...seedData,
+    const shorter = await seedMeetingType(meetingTypes);
+    const longer = await seedMeetingType(meetingTypes, {
       name: 'Консультация',
       durationMinutes: 60,
     });
@@ -126,7 +106,7 @@ describe('pg-адаптер броней: exclusion constraint', () => {
 
   it('стык интервалов разрешён: конец одной брони — начало следующей', async () => {
     const { meetingTypes, bookings } = adapters();
-    const meetingType = await meetingTypes.create(seedData);
+    const meetingType = await seedMeetingType(meetingTypes);
     const startMs = ms('2026-11-17T09:00:00+03:00');
 
     const first = await bookings.create(bookingData(meetingType, startMs));

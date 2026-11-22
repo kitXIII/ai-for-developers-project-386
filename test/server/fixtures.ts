@@ -1,4 +1,5 @@
-import type { MeetingTypeData } from '../../server/models/meeting-type.js';
+import type { BookingData } from '../../server/models/booking.js';
+import type { MeetingType, MeetingTypeData } from '../../server/models/meeting-type.js';
 import type { Schedule } from '../../server/models/schedule.js';
 import type { MeetingTypeRepository } from '../../server/repositories/meeting-types.js';
 
@@ -29,7 +30,7 @@ export function localDate(dayOffset: number): string {
 
 // The shared seed of the scenario/repository tests (ADR 0004): the production
 // in-memory adapter is used as-is, seeded through its own port.
-const seedData: MeetingTypeData = {
+export const SEED_MEETING_TYPE: MeetingTypeData = {
   name: 'Знакомство',
   description: 'Короткий видеозвонок для знакомства',
   durationMinutes: 30,
@@ -39,5 +40,17 @@ export async function seedMeetingType(
   meetingTypes: MeetingTypeRepository,
   data: Partial<MeetingTypeData> = {},
 ) {
-  return meetingTypes.create({ ...seedData, ...data });
+  return meetingTypes.create({ ...SEED_MEETING_TYPE, ...data });
+}
+
+// Booking data of the repository contract: the duration comes from the type,
+// exactly as `draftBooking` derives it.
+export function bookingData(meetingType: MeetingType, startMs: number): BookingData {
+  return {
+    meetingTypeId: meetingType.id,
+    meetingTypeName: meetingType.name,
+    guestName: 'Мария Петрова',
+    startMs,
+    endMs: startMs + meetingType.durationMinutes * 60_000,
+  };
 }
