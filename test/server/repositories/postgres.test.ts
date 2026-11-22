@@ -99,9 +99,12 @@ describe('pg-адаптер броней: exclusion constraint', () => {
     await bookings.create(bookingData(shorter, startMs));
 
     // 09:15–10:15 overlaps 09:00–09:30.
-    await expect(
-      bookings.create(bookingData(longer, startMs + 15 * 60_000)),
-    ).rejects.toBeInstanceOf(DomainError);
+    await expect(bookings.create(bookingData(longer, startMs + 15 * 60_000))).rejects.toMatchObject(
+      {
+        kind: 'slot_taken',
+        key: 'errors.domain.slots.taken',
+      },
+    );
   });
 
   it('одинаковый старт разных длительностей — DomainError slot_taken', async () => {
