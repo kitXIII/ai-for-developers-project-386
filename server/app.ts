@@ -21,6 +21,10 @@ type BuildAppOptions = {
   now?: () => string;
   // The schedule is configuration: the default lives in `composeDependencies()`.
   schedule?: Schedule;
+  // The Postgres connection string. Only `server/index.ts` reads it from the
+  // environment and passes it here (ADR 0008); without it the app keeps the
+  // in-memory adapters.
+  databaseUrl?: string;
 };
 
 export async function buildApp({
@@ -28,12 +32,27 @@ export async function buildApp({
   logger = true,
   now,
   schedule,
+  databaseUrl,
 }: BuildAppOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({ logger });
 
   // This file is the HTTP shell: the object graph is composed in one named
   // place (ADR 0006), so neither adapters nor the clock conversion live here.
-  const deps = composeDependencies({ now, schedule });
+  const deps = composeDependencies({ now, schedule, databaseUrl });
+
+  // With a database, startup proves the connection before any route is
+  // registered. A failure closes the pool and rejects, so `listen` never runs
+  // on a half-configured app; without one this is a no-op.
+  try {
+    await deps.checkConnection();
+  } catch (error) {
+    await deps.close();
+    throw error;
+  }
+
+  app.addHook('onClose', async () => {
+    await deps.close();
+  });
 
   registerErrorHandler(app);
 
