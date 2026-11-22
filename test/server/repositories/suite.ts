@@ -16,11 +16,8 @@ type RepositoryContract = {
 };
 
 export type ContractSetup = {
-  // A fresh pair of adapters per test, or shared adapters with `reset` between
-  // tests — both keep tests isolated.
+  // A fresh pair of adapters per test; isolation is the adapter's own concern.
   create: () => RepositoryContract | Promise<RepositoryContract>;
-  // Postgres reuses one database per file and truncates between tests.
-  reset?: () => Promise<void>;
 };
 
 const seedData: MeetingTypeData = {
@@ -47,7 +44,6 @@ export function describeRepositoryContract(label: string, setup: ContractSetup):
     let repos: RepositoryContract;
 
     beforeEach(async () => {
-      await setup.reset?.();
       repos = await setup.create();
     });
 
