@@ -117,8 +117,9 @@ export function inMemoryBookings(): BookingRepository;
 ## Доменные ошибки
 
 `DomainError` несёт вид, ключ каталога и параметры подстановки, но не `statusCode` и не готовую
-фразу. Этот пункт пересмотрен в ADR 0007 (тикет #61): текст живёт в каталоге, домен носит только
-ключ.
+фразу. Этот пункт пересмотрен в [ADR 0007](0007-i18n-message-catalog.md)
+(тикет [#61](https://github.com/kitXIII/ai-for-developers-project-386/issues/61)): текст живёт в
+каталоге, домен носит только ключ.
 
 ```ts
 // server/models/errors.ts
@@ -152,8 +153,9 @@ export class DomainError extends Error {
 
 - Ключ остаётся аргументом у места броска; адаптер не переписывает правило, а только переводит вид
   в пару `{ status, code }` и разрешает ключ в текст через `t(key, params)` из каталога
-  (ADR 0007). Один вид может нести несколько ключей: `outside_schedule` — выходной / вне сетки /
-  конец дня, `invalid_value` — четыре правила значения. Различаются формулировки, а не виды.
+  ([ADR 0007](0007-i18n-message-catalog.md)). Один вид может нести несколько ключей:
+  `outside_schedule` — выходной / вне сетки / конец дня, `invalid_value` — четыре правила
+  значения. Различаются формулировки, а не виды.
 - `ApiError` и `errorMap` живут только в `server/routes/errors.ts`; `ErrorCode` из
   `@app/api/types` импортирует на сервере только этот модуль. `Record<DomainErrorKind, …>`
   тотален: новый вид не скомпилируется без строки маппинга.
