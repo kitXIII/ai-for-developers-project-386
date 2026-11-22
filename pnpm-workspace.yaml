@@ -2,6 +2,10 @@ packages:
   - packages/*
 overrides:
   js-yaml: ^4.3.2
+  # drizzle-kit затягивает @esbuild-kit/esm-loader, а тот — esbuild 0.18.20
+  # с GHSA-67mh-4wv8-2f99. Версия из тулинга drizzle-kit (0.25.12) API-совместима,
+  # а скан osv не пропускает уязвимую транзитивную зависимость.
+  esbuild@0.18.20: 0.25.12
 allowBuilds:
   agnix: true
   esbuild: true
