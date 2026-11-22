@@ -13,6 +13,10 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 - `mise run check:staged -- <файлы>` / `mise run fix:staged -- <файлы>` — быстрая проверка/автоисправления конкретных файлов; полный `check` гоняйте один раз в конце работы
 - `mise run fix` — безопасные автоисправления
 - `mise run test` / `pnpm test:watch` — Vitest
+- `mise run db:migrate` — применить SQL-миграции из `migrations/` к `DATABASE_URL` (вручную:
+  приложение схему само не мигрирует). `DATABASE_URL` читает только `server/index.ts` и передаёт
+  опцией в `buildApp()`; без переменной приложение работает на in-memory адаптерах
+  (`docs/adr/0008-postgres-drizzle.md`).
 - `mise run test:e2e` — Playwright e2e (`test/e2e/*.spec.ts`, проекты mobile 360×800 и desktop 1280×720;
   входит в `check`). Локально браузер ставится один раз: `pnpm exec playwright install chromium`.
   В CI job `check` ставит его сам на каждом прогоне: `pnpm exec playwright install --with-deps chromium`

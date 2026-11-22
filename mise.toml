@@ -30,6 +30,19 @@ run = "pnpm build"
 run = "pnpm start"
 env = { NODE_ENV = "production" }
 
+# Apply the SQL migrations from the root `migrations/` folder to DATABASE_URL.
+# Manual on purpose: the app never migrates its own schema at startup (ADR 0008).
+[tasks."db:migrate"]
+run = '''
+#!/usr/bin/env bash
+set -e
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "db:migrate: DATABASE_URL is not set — point it at the Postgres database to migrate." >&2
+  exit 1
+fi
+pnpm exec drizzle-kit migrate --config server/repositories/drizzle.config.ts
+'''
+
 # Full CI gate: whole project, including the network vulnerability scan.
 [tasks.check]
 depends = ["check:push", "audit"]
