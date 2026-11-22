@@ -15,5 +15,8 @@
         "zod"
       ]
     }
+  },
+  "drizzle": {
+    "config": ["server/repositories/drizzle.config.ts"]
   }
 }
