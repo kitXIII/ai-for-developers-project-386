@@ -12,9 +12,12 @@ Status: accepted
 
 ## Решение
 
-- `server/composition.ts` — композиционный корень: `composeDependencies({ now?, schedule? })`
+- `server/composition.ts` — композиционный корень: `composeDependencies({ now?, schedule?, databaseUrl? })`
   возвращает `{ schedule, meetingTypes: { list, get, create, listSlots }, bookings: { create,
-  listUpcoming } }`. Это единственный экспорт модуля.
+  listUpcoming }, checkConnection, close }`. Возможности `meetingTypes`/`bookings` — прежние;
+  `checkConnection` и `close` добавлены [ADR 0008](0008-postgres-drizzle.md): проверка соединения
+  на старте и идемпотентное закрытие пула, для in-memory адаптеров — no-op. `composeDependencies`
+  остаётся единственным экспортом модуля.
 - `assertSchedule` вызывается здесь: конфигурацию читает тот, кто её собирает. Строковые часы
   `now: () => string` конвертируются в `nowMs` на этом же шве (ADR 0004, «Шов часов»).
 - `buildApp` передаёт в каждый роут явный список зависимостей; типы опций объявляются локально
@@ -44,8 +47,9 @@ Status: accepted
 - Триггер пересмотра контейнера: (i) графу понадобится жизненный цикл или скоупы (пул,
   транзакции, состояние на запрос), (ii) сквозных зависимостей композиции станет больше 10,
   (iii) появится вторая точка сборки (воркер, CLI). Пока не выполнено ни одно.
-- `pg` приходит в `composeDependencies()`; пул и `onClose` появятся там вместе с БД
-  ([#52](https://github.com/kitXIII/ai-for-developers-project-386/issues/52)).
-- Новых тестов нет: проводку держит контрактный тест, `assertSchedule` — по прецеденту 0004.
+- `pg` приходит в `composeDependencies()`; пул, `checkConnection` и `close` добавлены вместе с БД
+  ([ADR 0008](0008-postgres-drizzle.md), [#52](https://github.com/kitXIII/ai-for-developers-project-386/issues/52)).
+- Новых тестов на проводку сценариев нет: их держит контрактный тест; композицию и падение старта
+  до `listen` проверяет `test/server/composition.test.ts`; `assertSchedule` — по прецеденту 0004.
 - Пересмотренное в 0004: композиционный корень (был `buildApp`) и место `assertSchedule`.
   Слои, порты и правило «сценарий перечисляет свои зависимости» остаются в силе.

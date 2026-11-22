@@ -21,9 +21,10 @@ type BuildAppOptions = {
   now?: () => string;
   // The schedule is configuration: the default lives in `composeDependencies()`.
   schedule?: Schedule;
-  // The Postgres connection string. Only `server/index.ts` reads it from the
-  // environment and passes it here (ADR 0008); without it the app keeps the
-  // in-memory adapters.
+  // The Postgres connection string. The application reads it from the
+  // environment only in `server/index.ts` and passes it here (ADR 0008);
+  // `drizzle.config.ts` reads it for the drizzle-kit CLI only, never at runtime.
+  // Without it the app keeps the in-memory adapters.
   databaseUrl?: string;
 };
 
