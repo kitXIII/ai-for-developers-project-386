@@ -18,5 +18,6 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["server"]
+  "include": ["server"],
+  "exclude": ["server/repositories/drizzle.config.ts"]
 }
