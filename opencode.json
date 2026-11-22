@@ -1,4 +1,10 @@
 {
+  "$schema": "https://opencode.ai/config.json",
+  "permissions": [
+    { "action": "shell", "resource": "gh pr merge *", "effect": "deny" },
+    { "action": "shell", "resource": "gh api *merge*", "effect": "deny" },
+    { "action": "shell", "resource": "git push *main*", "effect": "deny" }
+  ],
   "mcp": {
     "servers": {
       "mantine": {
