@@ -11,6 +11,8 @@ export default defineConfig({
   dbCredentials: {
     // Only `drizzle-kit migrate` reads it; the app reads `DATABASE_URL` in
     // `server/index.ts`, and `mise run db:migrate` refuses to start without it.
+    // This file is the only place outside the application runtime that reads the
+    // variable.
     url: process.env.DATABASE_URL ?? '',
   },
 });

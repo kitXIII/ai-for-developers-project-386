@@ -14,9 +14,10 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 - `mise run fix` — безопасные автоисправления
 - `mise run test` / `pnpm test:watch` — Vitest
 - `mise run db:migrate` — применить SQL-миграции из `migrations/` к `DATABASE_URL` (вручную:
-  приложение схему само не мигрирует). `DATABASE_URL` читает только `server/index.ts` и передаёт
-  опцией в `buildApp()`; без переменной приложение работает на in-memory адаптерах
-  (`docs/adr/0008-postgres-drizzle.md`).
+  приложение схему само не мигрирует). В приложении `DATABASE_URL` читает только `server/index.ts`
+  и передаёт опцией в `buildApp()`; `server/repositories/drizzle.config.ts` читает ту же переменную
+  только для CLI `drizzle-kit` и никогда в рантайме. Без переменной приложение работает на
+  in-memory адаптерах (`docs/adr/0008-postgres-drizzle.md`).
 - `mise run test:e2e` — Playwright e2e (`test/e2e/*.spec.ts`, проекты mobile 360×800 и desktop 1280×720;
   входит в `check`). Локально браузер ставится один раз: `pnpm exec playwright install chromium`.
   В CI job `check` ставит его сам на каждом прогоне: `pnpm exec playwright install --with-deps chromium`
@@ -56,9 +57,11 @@ Commitlint проверяет каждый коммит: заголовок — 
 - typecheck — это три отдельных tsc-прохода (root/client `Bundler`, `tsconfig.server.json` NodeNext,
   `tsconfig.test.json`). В server-коде NodeNext: относительные импорты соседних модулей пишутся
   с расширением .js (как в `server/index.ts`), хотя сами файлы — .ts.
-- HTTP-тесты (`test/api/contract.test.ts`, `test/server/app.test.ts`) используют `app.inject()`
-  Fastify — без HTTP-сервера и Vite; приложение в них строится через
-  `buildApp({ serveClient: false, logger: false })`. Юнит-тесты слоёв (`test/server/models`,
+- Тесты делятся на два образца. HTTP-тесты (`test/api/contract.test.ts`, `test/server/app.test.ts`)
+  строят приложение через `buildApp({ serveClient: false, logger: false })` и ходят в него
+  `app.inject()` Fastify — без HTTP-сервера и Vite. `test/server/composition.test.ts` тоже строит
+  приложение (в том числе `buildApp` с недоступной БД), но запросы не инжектит: он проверяет
+  композицию и то, что старт падает до `listen`. Юнит-тесты слоёв (`test/server/models`,
   `services`, `repositories`, `shared`) приложение не строят — они вызывают модули напрямую.
 - `mise run check` включает `agent-config` (`agnix --strict .`) — валидирует этот файл: не ломайте
   структуру и ссылки в `AGENTS.md`/README.

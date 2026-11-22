@@ -1,9 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import { buildApp } from './app.js';
 
-// The process entry is the only place that reads `DATABASE_URL` (ADR 0008):
-// `buildApp()` and the composition receive it as an option, so tests and other
-// embeddings never inherit the deployment's database.
+// The process entry is the only place the application reads `DATABASE_URL`
+// (ADR 0008): `buildApp()` and the composition receive it as an option, so
+// tests and other embeddings never inherit the deployment's database.
+// `server/repositories/drizzle.config.ts` reads it only for the drizzle-kit CLI,
+// never at application runtime.
 const databaseUrl = process.env.DATABASE_URL;
 
 let app: FastifyInstance | undefined;
