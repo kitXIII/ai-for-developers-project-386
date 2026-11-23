@@ -37,12 +37,15 @@ components:
 target_only:
   - packages/api/generated/**
 
-uncovered_ok:
-  - name: [test/**, vitest.config.ts]
+accepted_gaps:
+  - kind: uncovered
+    files: [test/**, vitest.config.ts]
     because: 'checked by tsconfig.test.json, a separate Vitest program that easement does not index'
-  - name: [packages/api/**]
+  - kind: uncovered
+    files: [packages/api/**]
     because: 'hey-api generated SDK and its generator config, never hand-edited'
-  - name: [commitlint.config.mjs, postcss.config.cjs]
+  - kind: uncovered
+    files: [commitlint.config.mjs, postcss.config.cjs]
     because: 'plain JS root configs outside the indexed tsconfig'
 
 tests: auto
@@ -102,8 +105,7 @@ rules:
   server-shared:
     may_depend_on: [api, server-models]
     because: 'formatting takes the Schedule type from models; it is not part of the domain itself'
-  # Explicit components, not a glob: glob support arrived in easement 0.6.6, while
-  # the toolchain may still resolve 0.6.5 (CI did), which rejects `server*`.
+  # Explicit components, not a glob: a new layer needs a deliberate grant here.
   tests:
     may_depend_on:
       [
