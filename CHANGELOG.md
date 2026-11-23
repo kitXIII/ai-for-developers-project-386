@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.0](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.4.0...v0.5.0) (2026-11-23)
+
+
+### Features
+
+* **composition:** подключение Postgres, пул и проверка на старте ([f456b7c](https://github.com/kitXIII/ai-for-developers-project-386/commit/f456b7cee8b8b91c85d1f9b0e95b067d6cd81836))
+* **repositories:** pg-адаптеры на Drizzle для обоих портов ([a691d3a](https://github.com/kitXIII/ai-for-developers-project-386/commit/a691d3ac31c31006e11998a33a1808ea193d7eff))
+* **repositories:** схема Postgres, миграции и exclusion constraint ([d226ee2](https://github.com/kitXIII/ai-for-developers-project-386/commit/d226ee254c9c890a202935c328fc8786831e9bf5))
+
+
+### Bug Fixes
+
+* **app:** закрывать пул при сбое регистрации после onClose ([75aa6e5](https://github.com/kitXIII/ai-for-developers-project-386/commit/75aa6e58f6390ad0727e79bb20be0e99199bbfd2))
+* **build:** не собирать drizzle.config.ts в dist ([8876934](https://github.com/kitXIII/ai-for-developers-project-386/commit/8876934e6fb7ffb260f28676748fda014001012d))
+
 ## [0.4.0](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.3.1...v0.4.0) (2026-11-22)
 
 
