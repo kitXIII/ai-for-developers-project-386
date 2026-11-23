@@ -10,9 +10,16 @@ services:
     dockerContext: .
     healthCheckPath: /
     autoDeployTrigger: checksPass
+    envVars:
+      # Internal URL: сервис и БД в одном регионе. Схему мигрируем вручную
+      # (docs/adr/0008), поэтому переменная появляется после первой миграции.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kit-calls-db
+          property: connectionString
 
-# Postgres для pg-адаптеров (#74). Сервис получает DATABASE_URL отдельным
-# изменением после того, как миграции применены вручную (docs/adr/0008).
+# Postgres для pg-адаптеров (#74). Миграции применяются вручную до появления
+# DATABASE_URL у сервиса (docs/adr/0008, docs/adr/0009).
 databases:
   - name: kit-calls-db
     plan: free
