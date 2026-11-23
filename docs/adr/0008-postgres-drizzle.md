@@ -1,6 +1,7 @@
 # Postgres через Drizzle: схема, exclusion constraint и ручные миграции
 
-Status: accepted
+Status: accepted; ревизия — [ADR 0010](0010-migrations-in-deploy.md): в проде журнал применяет
+entrypoint контейнера до старта приложения, `dist/index.js` по-прежнему не мигрирует.
 
 Без `DATABASE_URL` приложение работает как раньше: in-memory адаптеры и неизменное поведение API. С
 непустым `DATABASE_URL` оба порта репозиториев идут в Postgres через один `pg.Pool` и один
@@ -137,3 +138,14 @@ returning` остаются выведенными. `tsc` проверяет о�
   процесс.
 - `knip` узнаёт конфиг Drizzle через плагин `drizzle` в `knip.json`; конфиг остаётся файлом слоя
   `repositories`, а `easement.yml` не меняется.
+
+## Ревизия: миграции в деплое ([ADR 0010](0010-migrations-in-deploy.md))
+
+Разделы «Миграции — руками» и «Автоприменения на старте нет» выше — принятая история решения до
+[#71](https://github.com/kitXIII/ai-for-developers-project-386/issues/71). Теперь образ содержит
+`migrations/`, а entrypoint контейнера (`dockerCommand` в `render.yaml`) запускает
+`dist/migrate.js` перед `dist/index.js`: журнал применяется под advisory lock, ошибка блокирует
+старт. `mise run db:migrate` остаётся для локальной БД, а `buildApp()`/`dist/index.js` схему
+по-прежнему не меняют. Вариант «автоприменение на старте» из списка отвергнутых заменён осознанно:
+на free-плане Render нет другой точки запуска, а отдельный entrypoint не смешивает миграции с
+HTTP-приложением.

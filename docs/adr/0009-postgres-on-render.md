@@ -1,6 +1,7 @@
 # Postgres в проде: Render Blueprint, free-план и ручные миграции
 
-Status: accepted
+Status: accepted; ревизия — [ADR 0010](0010-migrations-in-deploy.md): миграции применяет entrypoint
+контейнера при каждом старте, ручной шаг перед деплоем больше не нужен.
 
 Прод-БД создаётся тем же Blueprint, что и web-сервис `kit-calls`, а сервис получает её internal URL
 в `DATABASE_URL`. База — free-план Render Postgres в регионе `singapore`, PostgreSQL 17. Миграции
@@ -77,3 +78,14 @@ free-БД в workspace может быть только одна. Истечен
 - Регион БД нельзя изменить после создания: `singapore` выбран под текущий web-сервис.
 - `DATABASE_URL` читает только `server/index.ts` и передаёт опцией в `buildApp()`; без переменной
   локальная разработка и тесты остаются на in-memory адаптерах ([ADR 0008](0008-postgres-drizzle.md)).
+
+## Ревизия: миграции в деплое ([ADR 0010](0010-migrations-in-deploy.md))
+
+Утверждение «Схема обновляется только вручную» и порядок «база → миграции → переменная» выше —
+принятая история решения до [#71](https://github.com/kitXIII/ai-for-developers-project-386/issues/71).
+Теперь `render.yaml` задаёт `dockerCommand: sh -c 'node dist/migrate.js && node dist/index.js'`:
+при каждом старте entrypoint применяет журнал из `migrations/` под advisory lock и не пускает
+приложение дальше при ошибке. Переменная из Blueprint может существовать с первого деплоя, а пустую
+базу доводит до журнала сам entrypoint. `mise run db:migrate` остаётся для локальной БД. Кроме
+`server/index.ts`, `DATABASE_URL` читает новый deploy-вход `server/migrate.ts`; приложение
+(`buildApp()`) по-прежнему получает URL опцией.

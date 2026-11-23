@@ -106,8 +106,11 @@ mise run              # dev-сервер на этом подключении
 С непустым `DATABASE_URL` оба репозитория работают через один пул `pg.Pool` и один Drizzle-инстанс;
 при старте приложение проверяет соединение (`SELECT 1`) и падает, если база недоступна. Без
 переменной или с пустой строкой остаются in-memory адаптеры, и поведение API не меняется.
-Миграции приложение само не применяет — только `mise run db:migrate`. Схема, exclusion constraint
-и тесты адаптеров на PGLite — [docs/adr/0008-postgres-drizzle.md](docs/adr/0008-postgres-drizzle.md).
+Для локальной БД миграции применяет только `mise run db:migrate` (или `pnpm migrate` — тот же
+журнал без `drizzle-kit`). В проде их запускает entrypoint контейнера до старта приложения, сам
+`dist/index.js` схему не меняет:
+[docs/adr/0010-migrations-in-deploy.md](docs/adr/0010-migrations-in-deploy.md). Схема, exclusion
+constraint и тесты адаптеров на PGLite — [docs/adr/0008-postgres-drizzle.md](docs/adr/0008-postgres-drizzle.md).
 
 ## Docker
 
@@ -118,8 +121,12 @@ mise run docker:build   # соберёт образ calls-calendar
 mise run docker:run     # запустит контейнер; хост-порт переопределяется: PORT=8080 mise run docker:run
 ```
 
-Без `DATABASE_URL` контейнер хранит данные в памяти процесса, так что перезапуск сбрасывает записи;
-на Render переменную подставляет Blueprint.
+Образ содержит `dist/migrate.js` и папку `migrations/`: `CMD` остаётся `node dist/index.js`,
+поэтому локальный `docker run` (без `DATABASE_URL`) работает на in-memory адаптерах. На Render
+команда контейнера — `sh -c 'node dist/migrate.js && node dist/index.js'`: схема обновляется до
+старта приложения, а ошибка миграции не даёт контейнеру запуститься
+([ADR 0010](docs/adr/0010-migrations-in-deploy.md)). Без `DATABASE_URL` контейнер хранит данные в
+памяти процесса, так что перезапуск сбрасывает записи; на Render переменную подставляет Blueprint.
 
 ## Деплой
 
@@ -146,8 +153,18 @@ Render дожидается зелёных чеков коммита и толь
 Прод-БД — Render Postgres `kit-calls-db` (`free`, `singapore`, PostgreSQL 17), создаётся тем же
 Blueprint, а сервис получает её internal URL в `DATABASE_URL` через
 `fromDatabase.connectionString`. Решение и ограничения — [ADR 0009](docs/adr/0009-postgres-on-render.md).
-Миграции автоматически не применяются: перед выкаткой новой схемы их запускают вручную
-`mise run db:migrate` с external URL из дашборда. Автозапуск в деплое — [#71](https://github.com/kitXIII/ai-for-developers-project-386/issues/71).
+
+Миграции применяются при каждом старте контейнера: `render.yaml` задаёт
+`dockerCommand: sh -c 'node dist/migrate.js && node dist/index.js'`. Раннер берёт advisory lock,
+читает журнал из `migrations/` и применяет только новые записи; на актуальной базе это no-op.
+Ошибка миграции завершает контейнер с ненулевым кодом до `listen`, поэтому приложение не стартует
+на устаревшей схеме. Так как free-план не даёт `preDeployCommand` и one-off jobs, это единственный
+доступный порядок «миграции → старт»
+([ADR 0010](docs/adr/0010-migrations-in-deploy.md)). Локальная БД по-прежнему мигрируется вручную:
+`mise run db:migrate`.
+
+Миграции пишутся обратно совместимыми: откат кода в `main` не откатывает уже применённый журнал,
+поэтому новая версия схемы должна работать со старым кодом (сначала добавить, потом удалять).
 
 Free-план: сервис засыпает после ~15 минут без трафика, и первый запрос после сна ждёт холодного
 старта. Записи в Postgres переживают сон, рестарт и деплой, но free-БД истекает через 30 дней после
