@@ -45,9 +45,11 @@
     },
     "easement": {
       "source": "mokevnin/easement",
+      "ref": "v0.11.1",
+      "commit": "bd43cde8f51af3b6267225f0d8cdf2d758139b5f",
       "sourceType": "github",
       "skillPath": "skills/easement/SKILL.md",
-      "computedHash": "bbd2b09b432d07e22ce2bac5471b23926b97891d6a6664a4bc142d1ef519875b"
+      "computedHash": "f603516b840df8470e071918b8053ecadcd35307bcc50f256ce8d269c11f385a"
     },
     "git-guardrails-claude-code": {
       "source": "mattpocock/skills",
