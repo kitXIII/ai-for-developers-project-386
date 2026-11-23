@@ -10,16 +10,19 @@ services:
     dockerContext: .
     healthCheckPath: /
     autoDeployTrigger: checksPass
+    # Entrypoint деплоя (docs/adr/0010): миграции из migrations/ применяются
+    # на каждом старте до приложения. Падение миграции останавливает запуск.
+    dockerCommand: sh -c 'node dist/migrate.js && node dist/index.js'
     envVars:
-      # Internal URL: сервис и БД в одном регионе. Схему мигрируем вручную
-      # (docs/adr/0008), поэтому переменная появляется после первой миграции.
+      # Internal URL: сервис и БД в одном регионе. Переменная есть с первого
+      # деплоя: схему приводит в порядок entrypoint до старта приложения.
       - key: DATABASE_URL
         fromDatabase:
           name: kit-calls-db
           property: connectionString
 
-# Postgres для pg-адаптеров (#74). Миграции применяются вручную до появления
-# DATABASE_URL у сервиса (docs/adr/0008, docs/adr/0009).
+# Postgres для pg-адаптеров (#74). Схему применяет entrypoint сервиса
+# (docs/adr/0010), ручной `mise run db:migrate` остаётся для локальной БД.
 databases:
   - name: kit-calls-db
     plan: free

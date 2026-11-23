@@ -31,7 +31,8 @@ run = "pnpm start"
 env = { NODE_ENV = "production" }
 
 # Apply the SQL migrations from the root `migrations/` folder to DATABASE_URL.
-# Manual on purpose: the app never migrates its own schema at startup (ADR 0008).
+# For a local database: production runs `dist/migrate.js` in the container
+# entrypoint before the app (docs/adr/0010), while `dist/index.js` never migrates.
 [tasks."db:migrate"]
 run = '''
 #!/usr/bin/env bash
