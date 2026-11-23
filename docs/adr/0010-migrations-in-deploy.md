@@ -3,8 +3,8 @@
 Status: accepted
 
 Прод-сервис `kit-calls` на free-плане Render применяет SQL-миграции из `migrations/` на каждом
-старте контейнера: `dockerCommand` в `render.yaml` — `sh -c 'node dist/migrate.js && node
-dist/index.js'`. Раннер работает на прод-зависимостях (`drizzle-orm` + `pg`), берёт advisory lock,
+старте контейнера: `dockerCommand` в `render.yaml` — `/bin/sh -c node dist/migrate.js && node
+dist/index.js`. Раннер работает на прод-зависимостях (`drizzle-orm` + `pg`), берёт advisory lock,
 применяет только новые записи журнала и завершается с ненулевым кодом при любой ошибке, поэтому
 приложение не стартует на устаревшей схеме. `CMD` образа остаётся `node dist/index.js`: локальный
 `docker run` без `DATABASE_URL` продолжает работать на in-memory адаптерах. Решение собрано по
@@ -31,8 +31,12 @@ one-off jobs, ни шелла на инстансе. Значит, единст�
 **Entrypoint контейнера — «миграции → приложение».** `render.yaml` задаёт сервису:
 
 ```yaml
-dockerCommand: sh -c 'node dist/migrate.js && node dist/index.js'
+dockerCommand: '/bin/sh -c node dist/migrate.js && node dist/index.js'
 ```
+
+Форма важна: Render передаёт команды после `/bin/sh -c` без вложенных кавычек. Запись
+`sh -c '…'` превращается в путь к скрипту и роняет контейнер с `exit 127`; это проверено на
+проде ([#82](https://github.com/kitXIII/ai-for-developers-project-386/issues/82)).
 
 `&&` — часть решения: ненулевой код раннера не даёт приложению начать `listen`. `Dockerfile` в
 runtime-стадии копирует `migrations/` рядом с `dist/`, а `CMD` остаётся прежним
