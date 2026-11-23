@@ -15,9 +15,9 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 - `mise run test` / `pnpm test:watch` — Vitest
 - `mise run db:migrate` — применить SQL-миграции из `migrations/` к `DATABASE_URL` для локальной
   БД (через `drizzle-kit`); `pnpm migrate` — тот же deploy-раннер через `tsx server/migrate.ts`, без
-  `drizzle-kit`. В проде миграции запускает entrypoint контейнера
-  (`node dist/migrate.js && node dist/index.js`, `dockerCommand` в `render.yaml`), а `dist/index.js`
-  сам схему не меняет (`docs/adr/0010-migrations-in-deploy.md`). Журнал forward-only: миграции
+  `drizzle-kit`. В проде миграции запускает entrypoint контейнера (`dockerCommand` в `render.yaml`):
+  мигратор отрабатывает до приложения, а само приложение схему не меняет
+  (`docs/adr/0010-migrations-in-deploy.md`). Журнал forward-only: миграции
   пишутся обратно совместимыми, откат — revert кода и обычный деплой, а не откат базы. В приложении
   `DATABASE_URL` читают `server/migrate.ts` (deploy-вход) и `server/index.ts` (HTTP-вход, передаёт
   опцией в `buildApp()`); `server/repositories/drizzle.config.ts` читает ту же переменную только для
