@@ -112,6 +112,14 @@ Vitest над форматированием момента (ADR 0004): доме
 - [x] JSON-404 неизвестных маршрутов (`{ message: 'Not Found' }`, дефолт Fastify) — пинится
       существующим `test/server/app.test.ts`; контракт описывает только известные маршруты. —
 
+## Deploy-раннер (`test/server/migrate.test.ts`)
+
+Настоящий шов раннера — образ: применение журнала и advisory lock проверяются smoke-прогоном
+`node dist/migrate.js` на настоящем Postgres. Без БД автоматически покрыт только fail-closed CLI.
+
+- [x] Без `DATABASE_URL` (`tsx server/migrate.ts`) раннер завершается с кодом 1 и сообщением в
+      stderr, не начиная миграцию. —
+
 ## Гейты CI
 
 `gen:check` (перегенерация + `git diff --exit-code` по `packages/api/generated`) и контрактный
