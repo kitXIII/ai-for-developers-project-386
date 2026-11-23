@@ -67,6 +67,10 @@ jobs:
       # above and on pre-push.
       - uses: mokevnin/easement@1eeaecd8451ed08e0f1203542788a77c8d98c71a
         with:
+          # The action defaults to `latest`, which drifted ahead of mise.toml:
+          # 0.11 rejects the 0.6 config (`uncovered_ok`). Pin to the local version
+          # until the tool and its config are upgraded deliberately.
+          version: 0.6.6
           diff: origin/main
 
   security:
