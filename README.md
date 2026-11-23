@@ -123,7 +123,7 @@ mise run docker:run     # запустит контейнер; хост-порт
 
 Образ содержит `dist/migrate.js` и папку `migrations/`: `CMD` остаётся `node dist/index.js`,
 поэтому локальный `docker run` (без `DATABASE_URL`) работает на in-memory адаптерах. На Render
-команда контейнера — `sh -c 'node dist/migrate.js && node dist/index.js'`: схема обновляется до
+команда контейнера — `/bin/sh -c node dist/migrate.js && node dist/index.js`: схема обновляется до
 старта приложения, а ошибка миграции не даёт контейнеру запуститься
 ([ADR 0010](docs/adr/0010-migrations-in-deploy.md)). Без `DATABASE_URL` контейнер хранит данные в
 памяти процесса, так что перезапуск сбрасывает записи; на Render переменную подставляет Blueprint.
@@ -155,7 +155,7 @@ Blueprint, а сервис получает её internal URL в `DATABASE_URL` 
 `fromDatabase.connectionString`. Решение и ограничения — [ADR 0009](docs/adr/0009-postgres-on-render.md).
 
 Миграции применяются при каждом старте контейнера: `render.yaml` задаёт
-`dockerCommand: sh -c 'node dist/migrate.js && node dist/index.js'`. Раннер берёт advisory lock,
+`dockerCommand: '/bin/sh -c node dist/migrate.js && node dist/index.js'`. Раннер берёт advisory lock,
 читает журнал из `migrations/` и применяет только новые записи; на актуальной базе это no-op.
 Ошибка миграции завершает контейнер с ненулевым кодом до `listen`, поэтому приложение не стартует
 на устаревшей схеме. Так как free-план не даёт `preDeployCommand` и one-off jobs, это единственный
