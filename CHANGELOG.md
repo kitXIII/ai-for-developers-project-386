@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.1](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.6.0...v0.6.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* **infra:** починить dockerCommand для Render (тикет [#82](https://github.com/kitXIII/ai-for-developers-project-386/issues/82)) ([ac02373](https://github.com/kitXIII/ai-for-developers-project-386/commit/ac023732b0e51502d3d9286d7b1adf4148558442))
+
 ## [0.6.0](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.5.0...v0.6.0) (2026-11-23)
 
 
