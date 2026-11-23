@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.5.0...v0.6.0) (2026-11-23)
+
+
+### Features
+
+* **deploy:** запускать миграции в entrypoint контейнера (тикет [#71](https://github.com/kitXIII/ai-for-developers-project-386/issues/71)) ([209c17c](https://github.com/kitXIII/ai-for-developers-project-386/commit/209c17cb94f0e3e2013c9c8dddc7c49f15a86e20))
+
+
+### Bug Fixes
+
+* **deploy:** ограничить ожидание блокировки и не терять ошибку (тикет [#71](https://github.com/kitXIII/ai-for-developers-project-386/issues/71)) ([3ac89f9](https://github.com/kitXIII/ai-for-developers-project-386/commit/3ac89f9af8c41efa6446da1e7713c04e9b362de7))
+
 ## [0.5.0](https://github.com/kitXIII/ai-for-developers-project-386/compare/v0.4.0...v0.5.0) (2026-11-23)
 
 
