@@ -25,6 +25,7 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "build": "vite build && tsc -p tsconfig.server.json",
     "start": "node dist/index.js",
+    "migrate": "tsx server/migrate.ts",
     "lint": "oxlint --deny-warnings .",
     "lint:fix": "oxlint --deny-warnings --fix .",
     "format": "oxfmt --check .",

@@ -2,8 +2,9 @@
 
 # Production image. Stages: base (node + pnpm), build (full deps, vite + tsc
 # output in dist/), prod-deps (runtime dependencies only), runtime.
-# The runtime needs dist/ (bundle and cached vite.config.json), prod
-# node_modules and package.json — @fastify/vite resolves the app root by it.
+# The runtime needs dist/ (bundle, dist/migrate.js and cached vite.config.json),
+# prod node_modules and package.json — @fastify/vite resolves the app root by
+# it. `migrations/` travels next to `dist/` for the deploy entry (ADR 0010).
 
 FROM node:26-alpine AS base
 WORKDIR /app
@@ -33,6 +34,8 @@ WORKDIR /app
 COPY package.json ./
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+# The migration runner resolves `../migrations` from `dist/` (ADR 0010).
+COPY --from=build /app/migrations ./migrations
 USER node
 EXPOSE 3000
 CMD ["node", "dist/index.js"]
