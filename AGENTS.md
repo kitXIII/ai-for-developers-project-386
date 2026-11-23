@@ -14,12 +14,14 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 - `mise run fix` — безопасные автоисправления
 - `mise run test` / `pnpm test:watch` — Vitest
 - `mise run db:migrate` — применить SQL-миграции из `migrations/` к `DATABASE_URL` для локальной
-  БД (через `drizzle-kit`). В проде миграции запускает entrypoint контейнера
+  БД (через `drizzle-kit`); `pnpm migrate` — тот же deploy-раннер через `tsx server/migrate.ts`, без
+  `drizzle-kit`. В проде миграции запускает entrypoint контейнера
   (`node dist/migrate.js && node dist/index.js`, `dockerCommand` в `render.yaml`), а `dist/index.js`
-  сам схему не меняет (`docs/adr/0010-migrations-in-deploy.md`). В приложении `DATABASE_URL` читают
-  `server/migrate.ts` (deploy-вход) и `server/index.ts` (передаёт опцией в `buildApp()`);
-  `server/repositories/drizzle.config.ts` читает ту же переменную только для CLI `drizzle-kit` и
-  никогда в рантайме. Без переменной приложение работает на in-memory адаптерах
+  сам схему не меняет (`docs/adr/0010-migrations-in-deploy.md`). Журнал forward-only: миграции
+  пишутся обратно совместимыми, откат — revert кода и обычный деплой, а не откат базы. В приложении
+  `DATABASE_URL` читают `server/migrate.ts` (deploy-вход) и `server/index.ts` (HTTP-вход, передаёт
+  опцией в `buildApp()`); `server/repositories/drizzle.config.ts` читает ту же переменную только для
+  CLI `drizzle-kit` и никогда в рантайме. Без переменной приложение работает на in-memory адаптерах
   (`docs/adr/0008-postgres-drizzle.md`).
 - `mise run test:e2e` — Playwright e2e (`test/e2e/*.spec.ts`, проекты mobile 360×800 и desktop 1280×720;
   входит в `check`). Локально браузер ставится один раз: `pnpm exec playwright install chromium`.
@@ -79,7 +81,8 @@ Commitlint проверяет каждый коммит: заголовок — 
 `easement` проверяет импорты против `easement.yml`: компоненты `client`, `server`, `api`
 (`packages/api`) и плоские слои `server-*` с `priority: 1` — `server-routes`, `server-services`,
 `server-repositories`, `server-models`, `server-shared`. `server` — только wiring (`app.ts`,
-`index.ts`), у него явный перечень пяти слоёв. Направление зависимостей:
+`index.ts` — HTTP-вход; `migrate.ts` — deploy-вход, `docs/adr/0010-migrations-in-deploy.md`), у него
+явный перечень пяти слоёв. Направление зависимостей:
 `server (wiring) → server-routes → server-services → server-repositories → server-models`,
 плюс `server-shared → server-models`; `api` разрешён всем слоям. `layers` делает приложения
 сиблингами над контрактом (`client → server` запрещён), `manifests` требует объявлять внешние
@@ -97,10 +100,10 @@ Commitlint проверяет каждый коммит: заголовок — 
 
 ## Структура
 
-- `client/` — React 19 + Mantine 9 (SPA, Vite); `server/` — Fastify 5, точка входа `server/index.ts`,
-  приложение собирается в `buildApp()` (`server/app.ts`); тексты интерфейса и ошибок — каталог
-  `server/shared/i18n/` (`ru.ts`, `t()`), на клиенте его загружает `<MessagesProvider>`
-  (`client/lib/i18n.tsx`) через `GET /api/v1/messages`;
+- `client/` — React 19 + Mantine 9 (SPA, Vite); `server/` — Fastify 5: HTTP-вход
+  `server/index.ts`, deploy-вход `server/migrate.ts`, приложение собирается в `buildApp()`
+  (`server/app.ts`); тексты интерфейса и ошибок — каталог `server/shared/i18n/` (`ru.ts`, `t()`), на
+  клиенте его загружает `<MessagesProvider>` (`client/lib/i18n.tsx`) через `GET /api/v1/messages`;
 - `packages/api` (`@app/api`) — единственный workspace-пакет: контракт + генерируемый SDK.
 
 ## Ограничения

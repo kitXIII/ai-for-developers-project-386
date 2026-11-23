@@ -40,8 +40,9 @@ Docker-сервис, Blueprint и автодеплой из main»
 новыми и всегда добавляет суффикс к имени, а сервис уже существовал.
 
 **Прод-БД — тоже Blueprint.** Postgres `kit-calls-db` объявлен в `render.yaml`, а сервис получает
-`DATABASE_URL` через `fromDatabase.connectionString`; провижининг, free-план и ручные миграции —
-[ADR 0009](0009-postgres-on-render.md).
+`DATABASE_URL` через `fromDatabase.connectionString`; провижининг и free-план —
+[ADR 0009](0009-postgres-on-render.md), миграции в деплое — [ADR 0010](0010-migrations-in-deploy.md)
+(revision: entrypoint контейнера применяет журнал до старта приложения).
 
 **Free-план, регион singapore.** `plan: free` указан явно: в схеме Blueprint дефолт платный. Имя
 `kit-calls` на `onrender.com` было свободно; запасной вариант — `kit-calls-calendar`.
