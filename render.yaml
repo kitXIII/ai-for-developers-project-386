@@ -10,3 +10,13 @@ services:
     dockerContext: .
     healthCheckPath: /
     autoDeployTrigger: checksPass
+
+# Postgres для pg-адаптеров (#74). Сервис получает DATABASE_URL отдельным
+# изменением после того, как миграции применены вручную (docs/adr/0008).
+databases:
+  - name: kit-calls-db
+    plan: free
+    region: singapore
+    postgresMajorVersion: '17'
+    databaseName: kit_calls
+    user: kit_calls
