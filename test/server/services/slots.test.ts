@@ -1,16 +1,32 @@
-import { describe, expect, it } from 'vitest';
-import { inMemoryBookings } from '../../../server/repositories/bookings.js';
-import { inMemoryMeetingTypes } from '../../../server/repositories/meeting-types.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { Persistence } from '../../../server/repositories/persistence.js';
 import { createBooking } from '../../../server/services/bookings.js';
 import { listSlots } from '../../../server/services/slots.js';
-import { FROZEN_NOW_MS, localDate, ms, seedMeetingType, TEST_SCHEDULE } from '../fixtures.js';
+import {
+  createTestPersistence,
+  FROZEN_NOW_MS,
+  localDate,
+  ms,
+  seedMeetingType,
+  TEST_SCHEDULE,
+} from '../fixtures.js';
 
-// The slot scenario without Fastify (ADR 0004): the production in-memory
-// adapters are seeded through their own ports, no mocks and no call counts.
+// The slot scenario without Fastify (ADR 0004): a fresh PGlite storage
+// (ADR 0011) is seeded through the ports, no mocks and no call counts.
+let persistence: Persistence;
+
+beforeEach(async () => {
+  persistence = await createTestPersistence();
+});
+
+afterEach(async () => {
+  await persistence.close();
+});
+
 function setup() {
   return {
-    meetingTypes: inMemoryMeetingTypes(),
-    bookings: inMemoryBookings(),
+    meetingTypes: persistence.meetingTypes,
+    bookings: persistence.bookings,
     schedule: TEST_SCHEDULE,
     now: () => FROZEN_NOW_MS,
   };

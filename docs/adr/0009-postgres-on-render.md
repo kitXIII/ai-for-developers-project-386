@@ -1,7 +1,9 @@
 # Postgres в проде: Render Blueprint, free-план и ручные миграции
 
 Status: accepted; ревизия — [ADR 0010](0010-migrations-in-deploy.md): миграции применяет entrypoint
-контейнера при каждом старте, ручной шаг перед деплоем больше не нужен.
+контейнера при каждом старте, ручной шаг перед деплоем больше не нужен. Ревизия —
+[ADR 0011](0011-single-storage-adapter.md): локальная разработка и тесты идут на PGlite,
+in-memory адаптеров больше нет.
 
 Прод-БД создаётся тем же Blueprint, что и web-сервис `kit-calls`, а сервис получает её internal URL
 в `DATABASE_URL`. База — free-план Render Postgres в регионе `singapore`, PostgreSQL 17. Миграции

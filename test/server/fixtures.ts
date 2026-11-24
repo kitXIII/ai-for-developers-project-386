@@ -2,6 +2,8 @@ import type { BookingData } from '../../server/models/booking.js';
 import type { MeetingType, MeetingTypeData } from '../../server/models/meeting-type.js';
 import type { Schedule } from '../../server/models/schedule.js';
 import type { MeetingTypeRepository } from '../../server/repositories/meeting-types.js';
+import type { Persistence } from '../../server/repositories/persistence.js';
+import { pglitePersistence } from '../../server/repositories/pglite-persistence.js';
 
 // The clock of the model/scenario tests: Monday 16.11.2026 12:00 UTC+3. The
 // booking window is 17–30 November; weekends inside it are 21–22 and 28–29.
@@ -28,8 +30,15 @@ export function localDate(dayOffset: number): string {
   return new Date(shifted).toISOString().slice(0, 10);
 }
 
-// The shared seed of the scenario/repository tests (ADR 0004): the production
-// in-memory adapter is used as-is, seeded through its own port.
+// The storage of one test or one app (ADR 0011): a fresh in-memory PGlite with
+// the journal applied, so «a new persistence means empty data» stays true the
+// way it was with the removed in-memory adapters. The caller closes it.
+export function createTestPersistence(): Promise<Persistence> {
+  return pglitePersistence();
+}
+
+// The shared seed of the scenario/repository tests (ADR 0004): the port is
+// seeded through itself, so the seed does not depend on an adapter.
 export const SEED_MEETING_TYPE: MeetingTypeData = {
   name: 'Знакомство',
   description: 'Короткий видеозвонок для знакомства',

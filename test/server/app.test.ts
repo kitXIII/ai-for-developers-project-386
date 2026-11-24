@@ -6,7 +6,7 @@ describe('API', () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    app = await buildApp({ serveClient: false, logger: false });
+    app = await buildApp({ serveClient: false, logger: false, database: { kind: 'pglite' } });
   });
 
   afterAll(async () => {

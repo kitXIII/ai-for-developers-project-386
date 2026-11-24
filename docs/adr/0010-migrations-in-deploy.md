@@ -1,6 +1,7 @@
 # Миграции в деплое: entrypoint контейнера, advisory lock и fail closed
 
-Status: accepted
+Status: accepted; ревизия — [ADR 0011](0011-single-storage-adapter.md): in-memory адаптеров больше
+нет, поэтому локальный `docker run` требует `DATABASE_URL`.
 
 Прод-сервис `kit-calls` на free-плане Render применяет SQL-миграции из `migrations/` на каждом
 старте контейнера: `dockerCommand` в `render.yaml` — `/bin/sh -c node dist/migrate.js && node

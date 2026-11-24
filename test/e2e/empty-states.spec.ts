@@ -18,7 +18,9 @@ function portFor(testInfo: TestInfo, base: number): number {
 function startServer(port: number): ChildProcess {
   return spawn(resolve(ROOT, 'node_modules/.bin/tsx'), ['server/index.ts', '--dev'], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(port) },
+    // The local profile must land on PGlite even when the developer has a real
+    // DATABASE_URL exported: a pristine server is the whole point of this spec.
+    env: { ...process.env, DATABASE_URL: '', PORT: String(port) },
     // A new process group, so the stop below kills tsx and its node child.
     detached: true,
     stdio: 'ignore',
