@@ -8,7 +8,8 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
 
 ## Команды
 
-- `mise run` — dev-сервер (Fastify + Vite через @fastify/vite, порт 3000)
+- `mise run` — dev-сервер (Fastify + Vite через @fastify/vite, порт 3000); без `DATABASE_URL` —
+  на PGlite, с переменной — на Postgres
 - `mise run check` — полный CI-гейт: format → lint → typecheck → test → gen:check → knip → easement → jactionlint → typos → secrets → agent-config + osv-scanner (нужна сеть)
 - `mise run check:staged -- <файлы>` / `mise run fix:staged -- <файлы>` — быстрая проверка/автоисправления конкретных файлов; полный `check` гоняйте один раз в конце работы
 - `mise run fix` — безопасные автоисправления
@@ -21,8 +22,9 @@ React 19 + Mantine 9 (SPA) на клиенте, API-контракт в TypeSpec
   пишутся обратно совместимыми, откат — revert кода и обычный деплой, а не откат базы. В приложении
   `DATABASE_URL` читают `server/migrate.ts` (deploy-вход) и `server/index.ts` (HTTP-вход, передаёт
   опцией в `buildApp()`); `server/repositories/drizzle.config.ts` читает ту же переменную только для
-  CLI `drizzle-kit` и никогда в рантайме. Без переменной приложение работает на in-memory адаптерах
-  (`docs/adr/0008-postgres-drizzle.md`).
+  CLI `drizzle-kit` и никогда в рантайме. Без переменной запускается только dev-профиль `--dev`:
+  он поднимает PGlite (`docs/adr/0011-single-storage-adapter.md`), а собранное приложение без
+  `DATABASE_URL` падает при старте — in-memory адаптеров больше нет.
 - `mise run test:e2e` — Playwright e2e (`test/e2e/*.spec.ts`, проекты mobile 360×800 и desktop 1280×720;
   входит в `check`). Локально браузер ставится один раз: `pnpm exec playwright install chromium`.
   В CI job `check` ставит его сам на каждом прогоне: `pnpm exec playwright install --with-deps chromium`
@@ -63,7 +65,8 @@ Commitlint проверяет каждый коммит: заголовок — 
   `tsconfig.test.json`). В server-коде NodeNext: относительные импорты соседних модулей пишутся
   с расширением .js (как в `server/index.ts`), хотя сами файлы — .ts.
 - Тесты делятся на два образца. HTTP-тесты (`test/api/contract.test.ts`, `test/server/app.test.ts`)
-  строят приложение через `buildApp({ serveClient: false, logger: false })` и ходят в него
+  строят приложение через
+  `buildApp({ serveClient: false, logger: false, database: { kind: 'pglite' } })` и ходят в него
   `app.inject()` Fastify — без HTTP-сервера и Vite. `test/server/composition.test.ts` тоже строит
   приложение (в том числе `buildApp` с недоступной БД), но запросы не инжектит: он проверяет
   композицию и то, что старт падает до `listen`. Юнит-тесты слоёв (`test/server/models`,

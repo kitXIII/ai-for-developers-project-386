@@ -185,5 +185,15 @@ run = "jactionlint --no-color"
 run = "docker build -t calls-calendar ."
 
 # Run the built image. PORT is the host port, the container listens on 3000.
+# The image has no dev profile: the container refuses to start without a
+# database (ADR 0011), so DATABASE_URL is forwarded from the environment.
 [tasks."docker:run"]
-run = "docker run --rm -p \"${PORT:-3000}:3000\" calls-calendar"
+run = '''
+#!/usr/bin/env bash
+set -e
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "docker:run: DATABASE_URL is not set — the image has no in-memory or PGlite fallback." >&2
+  exit 1
+fi
+docker run --rm -p "${PORT:-3000}:3000" -e "DATABASE_URL=${DATABASE_URL}" calls-calendar
+'''

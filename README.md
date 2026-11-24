@@ -10,8 +10,8 @@
 ## О сервисе
 
 В проекте нет авторизации, личных кабинетов и интеграций с внешними календарями.
-Без `DATABASE_URL` данные хранятся в памяти процесса, так что перезапуск сбрасывает записи;
-в проде включён Render Postgres (см. раздел [Postgres](#postgres)).
+Данные живут в Postgres: в проде — Render Postgres, в dev, тестах и e2e — PGlite в памяти процесса,
+поэтому перезапуск dev-сервера сбрасывает записи (см. раздел [Postgres](#postgres)).
 
 Владелец календаря в приложении один и задан заранее.
 
@@ -88,29 +88,36 @@ mise run
 
 ```bash
 mise run build   # соберёт клиент и сервер в dist/
-mise run start   # запустит собранный сервер с NODE_ENV=production
+DATABASE_URL='postgres://localhost:5432/calendar' mise run start   # собранный сервер: база обязательна
 ```
 
 ### Postgres
 
-По умолчанию данные по-прежнему живут в памяти процесса. Чтобы сохранять их между рестартами,
-задайте `DATABASE_URL` и примените миграции:
+Прод и любой запуск собранного приложения работают только с Postgres: без `DATABASE_URL`
+`dist/index.js` падает при старте, а не отдаёт пустой сервис (ADR 0011). Dev-профиль, тесты и e2e
+используют PGlite — тот же Postgres, собранный в WASM и живущий в памяти процесса.
 
 ```bash
+# локально, с сохранением данных между рестартами
 export DATABASE_URL='postgres://localhost:5432/calendar'
 
 mise run db:migrate   # применяет SQL-миграции из migrations/ к DATABASE_URL
 mise run              # dev-сервер на этом подключении
+
+# без DATABASE_URL dev-сервер поднимает PGlite и стирает данные при рестарте
+mise run
 ```
 
-С непустым `DATABASE_URL` оба репозитория работают через один пул `pg.Pool` и один Drizzle-инстанс;
-при старте приложение проверяет соединение (`SELECT 1`) и падает, если база недоступна. Без
-переменной или с пустой строкой остаются in-memory адаптеры, и поведение API не меняется.
-Для локальной БД миграции применяет только `mise run db:migrate` (или `pnpm migrate` — тот же
-журнал без `drizzle-kit`). В проде их запускает entrypoint контейнера до старта приложения, сам
-`dist/index.js` схему не меняет:
+Оба репозитория работают через один пул `pg.Pool` и один Drizzle-инстанс (в dev на PGlite —
+через один клиент); при старте приложение проверяет соединение (`SELECT 1`) и падает, если база
+недоступна. Явный `DATABASE_URL` важнее флага `--dev`, поэтому `mise run` с переменной идёт в
+настоящий Postgres. Для локальной БД миграции применяет только `mise run db:migrate` (или
+`pnpm migrate` — тот же журнал без `drizzle-kit`). В проде их запускает entrypoint контейнера до
+старта приложения, сам `dist/index.js` схему не меняет:
 [docs/adr/0010-migrations-in-deploy.md](docs/adr/0010-migrations-in-deploy.md). Схема, exclusion
-constraint и тесты адаптеров на PGLite — [docs/adr/0008-postgres-drizzle.md](docs/adr/0008-postgres-drizzle.md).
+constraint и тесты адаптеров на PGLite — [docs/adr/0008-postgres-drizzle.md](docs/adr/0008-postgres-drizzle.md);
+единственный адаптер и PGlite вне прода —
+[docs/adr/0011-single-storage-adapter.md](docs/adr/0011-single-storage-adapter.md).
 
 ## Docker
 
@@ -118,15 +125,15 @@ constraint и тесты адаптеров на PGLite — [docs/adr/0008-postg
 
 ```bash
 mise run docker:build   # соберёт образ calls-calendar
-mise run docker:run     # запустит контейнер; хост-порт переопределяется: PORT=8080 mise run docker:run
+DATABASE_URL='postgres://…' mise run docker:run   # запустит контейнер; хост-порт: PORT=8080 mise run docker:run
 ```
 
-Образ содержит `dist/migrate.js` и папку `migrations/`: `CMD` остаётся `node dist/index.js`,
-поэтому локальный `docker run` (без `DATABASE_URL`) работает на in-memory адаптерах. На Render
-команда контейнера — `/bin/sh -c node dist/migrate.js && node dist/index.js`: схема обновляется до
-старта приложения, а ошибка миграции не даёт контейнеру запуститься
-([ADR 0010](docs/adr/0010-migrations-in-deploy.md)). Без `DATABASE_URL` контейнер хранит данные в
-памяти процесса, так что перезапуск сбрасывает записи; на Render переменную подставляет Blueprint.
+Образ содержит `dist/migrate.js` и папку `migrations/`: `CMD` остаётся `node dist/index.js`, а
+локальный `docker run` требует `DATABASE_URL` — без переменной контейнер падает при старте
+([ADR 0011](docs/adr/0011-single-storage-adapter.md)); `mise run docker:run` пробрасывает её в
+контейнер. На Render команда контейнера — `/bin/sh -c node dist/migrate.js && node dist/index.js`:
+схема обновляется до старта приложения, а ошибка миграции не даёт контейнеру запуститься
+([ADR 0010](docs/adr/0010-migrations-in-deploy.md)). Переменную подставляет Blueprint.
 
 ## Деплой
 

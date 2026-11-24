@@ -260,7 +260,7 @@ describe('API contract', () => {
   const ajv = new Ajv2020({ strict: false });
 
   beforeAll(async () => {
-    app = await buildApp({ serveClient: false, logger: false });
+    app = await buildApp({ serveClient: false, logger: false, database: { kind: 'pglite' } });
   });
 
   afterAll(async () => {
@@ -469,7 +469,11 @@ describe('API contract', () => {
   it(`GET ${meetingTypesPath}/{id}/slots returns the booking window on the type's grid`, async () => {
     // A pristine app instance: bookings made by the POST cases above must not
     // shift the day's first slot away from 09:00 (slots hide booked starts).
-    const slotsApp = await buildApp({ serveClient: false, logger: false });
+    const slotsApp = await buildApp({
+      serveClient: false,
+      logger: false,
+      database: { kind: 'pglite' },
+    });
     try {
       const created = await createMeetingType(slotsApp, validMeetingType);
 
@@ -608,7 +612,11 @@ describe('API contract', () => {
   it(`POST ${bookingsPath} → 409 slot_taken on a partial overlap with a longer booking`, async () => {
     // A pristine app: the bookings made by the cases above must not hide the
     // day's 09:00 start the assertions below lean on.
-    const overlapApp = await buildApp({ serveClient: false, logger: false });
+    const overlapApp = await buildApp({
+      serveClient: false,
+      logger: false,
+      database: { kind: 'pglite' },
+    });
     try {
       const shorter = await createMeetingType(overlapApp, validMeetingType);
       const longer = await createMeetingType(overlapApp, {
@@ -650,7 +658,11 @@ describe('API contract', () => {
   });
 
   it(`POST ${bookingsPath} → 409 slot_taken when a longer booking covers an existing one`, async () => {
-    const overlapApp = await buildApp({ serveClient: false, logger: false });
+    const overlapApp = await buildApp({
+      serveClient: false,
+      logger: false,
+      database: { kind: 'pglite' },
+    });
     try {
       const shorter = await createMeetingType(overlapApp, validMeetingType);
       const longer = await createMeetingType(overlapApp, {
@@ -717,7 +729,12 @@ describe('API contract', () => {
     let frozenApp: FastifyInstance;
 
     beforeAll(async () => {
-      frozenApp = await buildApp({ serveClient: false, logger: false, now: () => frozenNow });
+      frozenApp = await buildApp({
+        serveClient: false,
+        logger: false,
+        now: () => frozenNow,
+        database: { kind: 'pglite' },
+      });
     });
 
     afterAll(async () => {
@@ -821,7 +838,12 @@ describe('API contract', () => {
     // upcoming filter reads the injected clock, not the wall clock.
     const frozenToday = '2026-11-16T12:00:00+03:00'; // a Monday
     let clock = frozenToday;
-    const clockApp = await buildApp({ serveClient: false, logger: false, now: () => clock });
+    const clockApp = await buildApp({
+      serveClient: false,
+      logger: false,
+      now: () => clock,
+      database: { kind: 'pglite' },
+    });
     try {
       const created = await createMeetingType(clockApp, validMeetingType);
       // Two weekdays of the window, 09:00–09:30 each (the grid starts at 09:00).
@@ -850,7 +872,11 @@ describe('API contract', () => {
   });
 
   it(`GET ${adminBookingsPath} answers an empty list while there are no bookings`, async () => {
-    const emptyApp = await buildApp({ serveClient: false, logger: false });
+    const emptyApp = await buildApp({
+      serveClient: false,
+      logger: false,
+      database: { kind: 'pglite' },
+    });
     try {
       const response = await emptyApp.inject({ method: 'GET', url: adminBookingsPath });
 

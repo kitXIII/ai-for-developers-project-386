@@ -1,16 +1,33 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { MeetingType } from '../../../server/models/meeting-type.js';
+import type { Persistence } from '../../../server/repositories/persistence.js';
 import { createBooking, listUpcomingBookings } from '../../../server/services/bookings.js';
-import { inMemoryBookings } from '../../../server/repositories/bookings.js';
-import { inMemoryMeetingTypes } from '../../../server/repositories/meeting-types.js';
-import { FROZEN_NOW_MS, localDate, ms, seedMeetingType, TEST_SCHEDULE } from '../fixtures.js';
+import {
+  createTestPersistence,
+  FROZEN_NOW_MS,
+  localDate,
+  ms,
+  seedMeetingType,
+  TEST_SCHEDULE,
+} from '../fixtures.js';
 
-// Scenarios are exercised without Fastify (ADR 0004): the production in-memory
-// adapters are seeded through their own ports, writes are observed via `list()`
-// — no mocks and no call counts.
+// Scenarios are exercised without Fastify (ADR 0004): a fresh PGlite storage
+// (ADR 0011) is seeded through the ports, writes are observed via `list()` — no
+// mocks and no call counts.
+let persistence: Persistence;
+
+beforeEach(async () => {
+  persistence = await createTestPersistence();
+});
+
+afterEach(async () => {
+  await persistence.close();
+});
+
 function setup() {
   return {
-    meetingTypes: inMemoryMeetingTypes(),
-    bookings: inMemoryBookings(),
+    meetingTypes: persistence.meetingTypes,
+    bookings: persistence.bookings,
     schedule: TEST_SCHEDULE,
     now: () => FROZEN_NOW_MS,
   };
@@ -104,24 +121,32 @@ describe('createBooking', () => {
 });
 
 describe('listUpcomingBookings', () => {
-  const bookingOf = (startMs: number, endMs: number, guestName: string) => ({
-    meetingTypeId: 'meeting-type-1',
-    meetingTypeName: 'Знакомство',
+  // Postgres enforces the «no overlapping bookings» exclusion constraint, so
+  // the fixture bookings of this scenario must not overlap each other.
+  const bookingOf = (
+    meetingType: MeetingType,
+    startMs: number,
+    endMs: number,
+    guestName: string,
+  ) => ({
+    meetingTypeId: meetingType.id,
+    meetingTypeName: meetingType.name,
     guestName,
     startMs,
     endMs,
   });
 
   it('оставляет брони, которые ещё не закончились', async () => {
-    const bookings = inMemoryBookings();
+    const meetingType = await seedMeetingType(persistence.meetingTypes);
+    const bookings = persistence.bookings;
     const upcoming = await bookings.create(
-      bookingOf(FROZEN_NOW_MS + 60_000, FROZEN_NOW_MS + 30 * 60_000, 'Мария Петрова'),
+      bookingOf(meetingType, FROZEN_NOW_MS + 30 * 60_000, FROZEN_NOW_MS + 60 * 60_000, 'Мария'),
     );
     const inProgress = await bookings.create(
-      bookingOf(FROZEN_NOW_MS - 10 * 60_000, FROZEN_NOW_MS + 10 * 60_000, 'Анна Смирнова'),
+      bookingOf(meetingType, FROZEN_NOW_MS - 10 * 60_000, FROZEN_NOW_MS + 10 * 60_000, 'Анна'),
     );
     await bookings.create(
-      bookingOf(FROZEN_NOW_MS - 60 * 60_000, FROZEN_NOW_MS - 30 * 60_000, 'Пётр Сидоров'),
+      bookingOf(meetingType, FROZEN_NOW_MS - 60 * 60_000, FROZEN_NOW_MS - 30 * 60_000, 'Пётр'),
     );
 
     const list = await listUpcomingBookings({ bookings, now: () => FROZEN_NOW_MS });
@@ -130,12 +155,23 @@ describe('listUpcomingBookings', () => {
   });
 
   it('сортирует по началу, не полагаясь на порядок вставки', async () => {
-    const bookings = inMemoryBookings();
+    const meetingType = await seedMeetingType(persistence.meetingTypes);
+    const bookings = persistence.bookings;
     const later = await bookings.create(
-      bookingOf(FROZEN_NOW_MS + 2 * 60 * 60_000, FROZEN_NOW_MS + 150 * 60_000, 'Позже'),
+      bookingOf(
+        meetingType,
+        FROZEN_NOW_MS + 2 * 60 * 60_000,
+        FROZEN_NOW_MS + 150 * 60_000,
+        'Позже',
+      ),
     );
     const earlier = await bookings.create(
-      bookingOf(FROZEN_NOW_MS + 60 * 60_000, FROZEN_NOW_MS + 1.5 * 60 * 60_000, 'Раньше'),
+      bookingOf(
+        meetingType,
+        FROZEN_NOW_MS + 60 * 60_000,
+        FROZEN_NOW_MS + 1.5 * 60 * 60_000,
+        'Раньше',
+      ),
     );
 
     const list = await listUpcomingBookings({ bookings, now: () => FROZEN_NOW_MS });
@@ -144,7 +180,7 @@ describe('listUpcomingBookings', () => {
   });
 
   it('отдаёт пустой список, когда броней нет', async () => {
-    const bookings = inMemoryBookings();
+    const bookings = persistence.bookings;
 
     expect(await listUpcomingBookings({ bookings, now: () => FROZEN_NOW_MS })).toEqual([]);
   });

@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import FastifyVite from '@fastify/vite';
-import { composeDependencies } from './composition.js';
+import { composeDependencies, type Database } from './composition.js';
 import type { Schedule } from './models/schedule.js';
 import { adminBookingRoutes } from './routes/admin-bookings.js';
 import { adminMeetingTypeRoutes } from './routes/admin-meeting-types.js';
@@ -21,11 +21,10 @@ type BuildAppOptions = {
   now?: () => string;
   // The schedule is configuration: the default lives in `composeDependencies()`.
   schedule?: Schedule;
-  // The Postgres connection string. The application reads it from the
-  // environment only in `server/index.ts` and passes it here (ADR 0008);
-  // `drizzle.config.ts` reads it for the drizzle-kit CLI only, never at runtime.
-  // Without it the app keeps the in-memory adapters.
-  databaseUrl?: string;
+  // The storage choice (ADR 0011). The application reads the environment only
+  // in `server/index.ts` and passes the decision here (ADR 0008); there is no
+  // default, so an app can never silently come up without a database.
+  database: Database;
 };
 
 export async function buildApp({
@@ -33,13 +32,13 @@ export async function buildApp({
   logger = true,
   now,
   schedule,
-  databaseUrl,
-}: BuildAppOptions = {}): Promise<FastifyInstance> {
+  database,
+}: BuildAppOptions): Promise<FastifyInstance> {
   const app = Fastify({ logger });
 
   // This file is the HTTP shell: the object graph is composed in one named
   // place (ADR 0006), so neither adapters nor the clock conversion live here.
-  const deps = composeDependencies({ now, schedule, databaseUrl });
+  const deps = await composeDependencies({ now, schedule, database });
 
   // With a database, startup proves the connection before any route is
   // registered. A failure closes the pool and rejects, so `listen` never runs

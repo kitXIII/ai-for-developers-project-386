@@ -1,7 +1,9 @@
 # Postgres через Drizzle: схема, exclusion constraint и ручные миграции
 
 Status: accepted; ревизия — [ADR 0010](0010-migrations-in-deploy.md): в проде журнал применяет
-entrypoint контейнера до старта приложения, `dist/index.js` по-прежнему не мигрирует.
+entrypoint контейнера до старта приложения, `dist/index.js` по-прежнему не мигрирует. Частично
+заменён [ADR 0011](0011-single-storage-adapter.md): in-memory адаптеры удалены, без `DATABASE_URL`
+приложение больше не запускается.
 
 Без `DATABASE_URL` приложение работает как раньше: in-memory адаптеры и неизменное поведение API. С
 непустым `DATABASE_URL` оба порта репозиториев идут в Postgres через один `pg.Pool` и один

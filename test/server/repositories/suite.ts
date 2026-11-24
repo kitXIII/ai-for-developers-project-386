@@ -3,11 +3,10 @@ import type { BookingRepository } from '../../../server/repositories/bookings.js
 import type { MeetingTypeRepository } from '../../../server/repositories/meeting-types.js';
 import { SEED_MEETING_TYPE, bookingData, ms } from '../fixtures.js';
 
-// The shared repository contract (ADR 0004): the same suite runs on the
-// in-memory adapters and on Postgres (PGLite), so the ports stay
-// interchangeable. Seeding goes through the port and bookings always reference
-// a real, seeded meeting type: in Postgres the foreign key is enforced, while
-// the in-memory adapter would happily accept anything.
+// The repository contract (ADR 0004): the suite runs on Postgres (PGLite), the
+// only adapter left (ADR 0011), so the ports keep an executable description of
+// their contract. Seeding goes through the port and bookings always reference a
+// real, seeded meeting type: the foreign key is enforced.
 type RepositoryContract = {
   meetingTypes: MeetingTypeRepository;
   bookings: BookingRepository;
